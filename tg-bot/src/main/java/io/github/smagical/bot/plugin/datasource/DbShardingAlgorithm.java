@@ -22,7 +22,7 @@ public class DbShardingAlgorithm implements ComplexKeysShardingAlgorithm<Long> {
         Long chatId = map.get("chat_id").stream().findFirst().get();
         Long id = map.get("id").stream().findFirst().get();
         int size = availableTargetNames.size();
-        int res = (int) (chatId % size);
+        int res = (int) (Math.abs(chatId) % size);
         for (String availableTargetName : availableTargetNames) {
             if (res == 0) return Collections.singleton(availableTargetName);
             res--;

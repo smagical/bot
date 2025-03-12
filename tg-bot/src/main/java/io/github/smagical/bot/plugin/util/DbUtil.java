@@ -102,8 +102,8 @@ public class DbUtil {
             String query = SegUtil.concat(SegUtil.seqByAll(helper.getQuery()),"<1>");
             PreparedStatement statement = connection.prepareStatement(SELECT_QUERY_PAGE_TG_MESSAGE_SQL);
             statement.setString(1,query);
-            statement.setInt(2,helper.getOffset());
-            statement.setInt(3,helper.getPage());
+            statement.setInt(2,helper.getPageSize());
+            statement.setInt(3,helper.getOffset());
             ResultSet resultSet =  statement.executeQuery();
             helper.setMessages(TgMessage.getTgMessages(resultSet));
             helper.setTotal(selectTgMessageCountByAll(dataSource, query));
@@ -133,8 +133,8 @@ public class DbUtil {
             String query = SegUtil.concat(SegUtil.seqByHanLP(helper.getQuery()),"<1>");
             PreparedStatement statement = connection.prepareStatement(SELECT_QUERY_PAGE_TG_MESSAGE_SQL);
             statement.setString(1,query);
-            statement.setInt(2,helper.getOffset());
-            statement.setInt(3,helper.getPage());
+            statement.setInt(2,helper.getPageSize());
+            statement.setInt(3,helper.getOffset());
             ResultSet resultSet =  statement.executeQuery();
             helper.setMessages(TgMessage.getTgMessages(resultSet));
             helper.setTotal(selectTgMessageCountByAll(dataSource, query));
@@ -153,9 +153,9 @@ public class DbUtil {
 
     }
 
-    private final static String SELECT_ID_TG_MESSAGE_SQL = "SELECT id,chat_id,album,message,link,type  FROM tg_messages WHERE id = ? AND chat_id = ?";
+    private final static String SELECT_ID_TG_MESSAGE_SQL = "SELECT id,chat_id,album,message,link  FROM tg_messages WHERE id = ? AND chat_id = ?";
 
-    public TgMessage selectTgMessageById(DataSource dataSource, Long id,Long chatId) throws SQLException {
+    public static TgMessage selectTgMessageById(DataSource dataSource, Long id,Long chatId) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(SELECT_ID_TG_MESSAGE_SQL);
             statement.setLong(1,id);
@@ -164,7 +164,7 @@ public class DbUtil {
             return TgMessage.getTgMessagesOne(resultSet);
         }
     }
-    public boolean exitsTgMessage(DataSource dataSource, Long id,Long chatId) throws SQLException {
+    public static boolean exitsTgMessage(DataSource dataSource, Long id, Long chatId) throws SQLException {
         return selectTgMessageById(dataSource, id, chatId) != null;
     }
 
@@ -199,7 +199,7 @@ public class DbUtil {
     public final static PageHelper<TgSpider>  selectTgSpiderAll(DataSource dataSource, PageHelper<TgSpider> helper) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement statement = connection.prepareStatement(SELECT_PAGE_ALL_TG_SPIDER_SQL);
-            statement.setInt(1,helper.getPage());
+            statement.setInt(1,helper.getPageSize());
             statement.setInt(2,helper.getOffset());
             ResultSet resultSet =  statement.executeQuery();
             helper.setMessages(TgSpider.getTgSpider(resultSet));

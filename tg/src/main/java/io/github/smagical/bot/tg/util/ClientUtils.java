@@ -199,7 +199,7 @@ public class ClientUtils {
             TdApi.TextEntity textEntity = new TdApi.TextEntity();
             textEntity.offset = a.length();
             TdApi.TextEntityTypeTextUrl textUrl = new TdApi.TextEntityTypeTextUrl();
-            textUrl.url = link.get(link.get(b));
+            textUrl.url = link.get(b);
             textEntity.type = textUrl;
             textEntity.length = c.length();
             return textEntity;

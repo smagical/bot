@@ -108,7 +108,7 @@ public  class MessageReplyHandler implements MessageContentHandler{
 
         }else {
             messages.add(
-                    String.format("\n%d/%d\n",messageHelper.getPage(),messageHelper.getLastPage())
+                    String.format("\n%d/%d\n 共%d条",messageHelper.getPage(),messageHelper.getLastPage(),messageHelper.getTotal())
             );
         }
         ClientUtils.sendTextByTextUrlType(

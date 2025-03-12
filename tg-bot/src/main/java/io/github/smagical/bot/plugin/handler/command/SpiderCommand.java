@@ -83,7 +83,6 @@ public class SpiderCommand implements CommandHandler{
                 .build();
         AdFilterImpl adFilter = new AdFilterImpl();
         adFilter.addFilter(new BlackAndWhiteListAdFilter());
-        adFilter.addFilter(new PrefixAdFilter());
         this.filter = new AdFilterImpl();
         this.commandInfoList.add(spiderList);
         this.commandInfoList.add(spiderChat);
@@ -97,7 +96,6 @@ public class SpiderCommand implements CommandHandler{
                 .addUpdateListener("AD",str->{
                     if (str == null) {
                         BlackAndWhiteListAdFilter.black.clear();
-                        PrefixAdFilter.prefix.clear();
                         BlackAndWhiteListAdFilter.white.clear();
                         return;
                     }
@@ -106,9 +104,7 @@ public class SpiderCommand implements CommandHandler{
                             .forEach(adWord->{
                                 if (adWord.strip().startsWith("!")){
                                     BlackAndWhiteListAdFilter.white.add(adWord.strip().substring(1).strip());
-                                } else if (adWord.strip().startsWith("!p")) {
-                                    PrefixAdFilter.prefix.add(adWord.strip().substring(2).strip());
-                                } else  {
+                                }  else  {
                                     BlackAndWhiteListAdFilter.black.add(adWord.strip());
                                 }
                             });
@@ -120,8 +116,6 @@ public class SpiderCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         if (args[0].strip().startsWith("!")){
             BlackAndWhiteListAdFilter.white.remove(args[0].strip().substring(1).strip());
-        } else if (args[0].strip().startsWith("!p")) {
-            PrefixAdFilter.prefix.remove(args[0].strip().substring(2).strip());
         } else  {
             BlackAndWhiteListAdFilter.black.remove(args[0].strip());
         }
@@ -150,9 +144,7 @@ public class SpiderCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         if (args[0].strip().startsWith("!")){
             BlackAndWhiteListAdFilter.white.add(args[0].strip().substring(1).strip());
-        } else if (args[0].strip().startsWith("!p")) {
-            PrefixAdFilter.prefix.add(args[0].strip().substring(2).strip());
-        } else  {
+        }  else  {
             BlackAndWhiteListAdFilter.black.add(args[0].strip());
         }
         withSQLAndNumCatch(()->{
@@ -178,9 +170,8 @@ public class SpiderCommand implements CommandHandler{
 
     private void spiderADList( CommandParam commandParam) {
         HashSet<String> set = new HashSet<>();
-        set.addAll(BlackAndWhiteListAdFilter.white);
+        set.addAll(BlackAndWhiteListAdFilter.white.stream().map(e->"!"+e).collect(Collectors.toSet()));
         set.addAll(BlackAndWhiteListAdFilter.black);
-        set.addAll(PrefixAdFilter.prefix);
         if (set.isEmpty()) {
             set.add("not found ad");
         }
@@ -223,11 +214,25 @@ public class SpiderCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            final TgSpider spider = DbUtil.selectLastTgSpiderById(plugin.getDataSource(), chatId);
+            TgSpider spider = DbUtil.selectLastTgSpiderById(plugin.getDataSource(), chatId);
+            if(spider == null) {
+                TdApi.Chat chat = plugin.getBot().getChat(chatId);
+                if (chat == null) {
+                    ClientUtils.sendTextMessage(
+                            plugin.getBot().getClient(),
+                            commandParam.getChatId(),
+                            String.format("not found by chat_id %s", chatId)
+                    );
+                    return;
+                }
+                spider = new TgSpider(chatId,chat.title,0l);
+                DbUtil.insertTgSpider(plugin.getDataSource(), spider);
+            }
+            final TgSpider tgSpiderTmp = spider;
             executor.submit(
                     ()->{
                        withSQLAndNumCatch(()->{
-                           spider(commandParam,spider);
+                           spider(commandParam,tgSpiderTmp);
                        },plugin.getBot().getClient(),commandParam.getChatId(),String.format("spider chat id %d",chatId));
                     }
             );
@@ -257,7 +262,7 @@ public class SpiderCommand implements CommandHandler{
                 message.add(String.valueOf(helperMessage.getChatId()));
                 message.add("\n");
             }
-            message.add(String.format("\n%s/%s\n",helper.getPage(),helper.getLastPage()));
+            message.add(String.format("\n%s/%s  共%s条\n",helper.getPage(),helper.getLastPage(),helper.getTotal()));
             ClientUtils.sendTextByCodeType(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -288,7 +293,7 @@ public class SpiderCommand implements CommandHandler{
                         plugin.getBot().getClient(),
                         spider.getChatId(),
                         spider_last,
-                        500
+                        200
                 );
                 if (messageCollections.isEmpty()) {
                     space_num++;
@@ -308,11 +313,14 @@ public class SpiderCommand implements CommandHandler{
                 }
                 List<TgMessage> messages =  new ArrayList<>();
                 for (TdApi.Message message : messageCollections) {
+
+                    last_id = Math.max(last_id,message.id);
+                    if (spider_last == 0) spider_last = message.id;
+                    else spider_last =  Math.min(spider_last,message.id);
+
                     if (message.content.getConstructor() != TdApi.MessageText.CONSTRUCTOR) continue;
 
 
-                    last_id = Math.max(last_id,message.id);
-                    spider_last =  Math.min(spider_last,message.id);
                     try {
                         if (message.id < spider.getLastSpiderId()) {
                             DbUtil.insertTgMessage(plugin.getDataSource(),messages);
@@ -333,7 +341,7 @@ public class SpiderCommand implements CommandHandler{
                         if (filter.filter(messageText.text.text)) {
                             continue;
                         }
-                        if (!DbUtil.exitsTgSpider(plugin.getDataSource(), spider_last)) {
+                        if (!DbUtil.exitsTgMessage(plugin.getDataSource(), message.id,message.chatId)) {
 
                             TgMessage tgMessage = new TgMessage();
                             tgMessage.setChatId(message.chatId);
@@ -344,10 +352,13 @@ public class SpiderCommand implements CommandHandler{
                                     message.chatId,
                                     message.id
                             ));
+                            tgMessage.setMessage(messageText.text.text);
 
                             messages.add(tgMessage);
                         }
-                    }catch (Exception e){}
+                    }catch (Exception e){
+                        int a= 1;
+                    }
 
                 }
 
@@ -434,12 +445,5 @@ public class SpiderCommand implements CommandHandler{
 
     }
 
-    public static class PrefixAdFilter implements AdFilter{
-        private  final static CopyOnWriteArrayList <String> prefix = new CopyOnWriteArrayList<>();
-        @Override
-        public boolean filter(String text) {
-            return prefix.stream().anyMatch(prefix -> text.startsWith(prefix));
-        }
-    }
 
 }

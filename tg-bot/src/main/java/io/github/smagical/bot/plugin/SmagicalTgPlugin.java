@@ -268,6 +268,16 @@ public class SmagicalTgPlugin implements Plugin {
         }
 
 
+
+
+        this.messageHandlers.add(new MessageReplyHandler(this));
+        this.commandHandlers.add(new ChatCommand(this));
+        this.commandHandlers.add(new SpiderCommand(this));
+        this.commandHandlers.add(new UserCommand(this));
+        this.authenticationHandlers.add(new ChatJoinAuthHandler(this));
+        this.commandHandlers.add(new ConfigCommand(this));
+        BotCommand botCommand = new BotCommand(this);
+        this.commandHandlers.add(botCommand);
         if ("cluster".equals(configuration.getModel().strip().toLowerCase())){
             Config redisConfig = new Config();
             redisConfig.useSingleServer()
@@ -278,16 +288,12 @@ public class SmagicalTgPlugin implements Plugin {
                     .setClientName("tg_bot");
             this.redissonClient = Redisson.create(redisConfig);
             this.authenticationHandlers.add(new RedisAuthHandler(this));
-        }
+            botCommand.reportOnline();
 
-        this.messageHandlers.add(new MessageReplyHandler(this));
-        this.commandHandlers.add(new ChatCommand(this));
-        this.commandHandlers.add(new SpiderCommand(this));
-        this.commandHandlers.add(new UserCommand(this));
-        this.authenticationHandlers.add(new ChatJoinAuthHandler(this));
-        this.commandHandlers.add(new ConfigCommand(this));
+        }
         this.configuration.init();
         this.configuration.loadFromDatabase(getDataSource());
+
     }
 
     public TgConfiguration getConfiguration() {
