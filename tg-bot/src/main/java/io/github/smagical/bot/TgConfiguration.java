@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Data
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 public class TgConfiguration {
 
 
-    private TgDataSourceConfiguration dataSource;
+    private HashMap<String,HashMap<String,Object>>  dataSources = HashMap.newHashMap(0);
     private TgRedisConfiguration redis;
     private String instanceId = UUID.randomUUID().toString();
     private Set<Long> adminIds = new HashSet<>();
@@ -138,23 +137,6 @@ public class TgConfiguration {
     public Set<Long> getAdminIds() {
         return Collections.unmodifiableSet(adminIds);
     }
-//    private
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Slf4j
-    public static class TgDataSourceConfiguration {
-        //sharding 0 //单机 1 //2 自定义
-        private int dataSourceType;
-        //classpath 或者其他
-        private String sharedingYmlPath;
-
-        private String dataSourceUrl;
-        private String username;
-        private String password;
-
-        private Supplier<DataSource> dataSourceSupplier;
-    }
 
     @Data
     @AllArgsConstructor
@@ -167,5 +149,6 @@ public class TgConfiguration {
        private String password;
        private int db = 0;
     }
+
 
 }
