@@ -1,6 +1,6 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-pluginEntity/assembly/1.1.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-pluginEntity/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
     <!--
         ID标签必须指定，ID会追加到打包的名字的末尾，项目名为：servicex-test-0.0.1-SNAPSHOT,
         打包后的名字为：servicex-test-0.0.1-SNAPSHOT-bin.tar.gz
@@ -47,6 +47,10 @@
         <fileSet>
             <directory>${project.basedir}/libs/data</directory>
             <outputDirectory>data</outputDirectory>
+            <excludes>
+                <exclude>model/**</exclude>
+                <exclude>**/*.txt</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/libs/*.sh</directory>

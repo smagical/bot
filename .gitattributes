@@ -1,0 +1,9 @@
+tg/libs/freebsd/libtdjni.so filter=lfs diff=lfs merge=lfs -text
+tg/libs/ubuntu18/libtdjni.so filter=lfs diff=lfs merge=lfs -text
+tg/libs/win/libcrypto-3-x64.dll filter=lfs diff=lfs merge=lfs -text
+tg/libs/win/libssl-3-x64.dll filter=lfs diff=lfs merge=lfs -text
+tg/libs/win/tdjni.dll filter=lfs diff=lfs merge=lfs -text
+tg/libs/win/tdjni.dll filter=lfs diff=lfs merge=lfs -text
+tg/libs/win/zlib1.dll filter=lfs diff=lfs merge=lfs -text
+*.dll filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text

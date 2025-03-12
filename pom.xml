@@ -10,6 +10,8 @@
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
+        <module>tg-bot</module>
+        <module>tg</module>
     </modules>
 
     <properties>

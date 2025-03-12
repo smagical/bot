@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.smagical.bot</groupId>
+        <artifactId>bot</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tg-bot</artifactId>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.h2database/h2 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5 -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.34</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjdk.nashorn/nashorn-core -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.htmlunit/htmlunit -->
+        <dependency>
+            <groupId>org.htmlunit</groupId>
+            <artifactId>htmlunit</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.google.zxing/core -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.google.zxing/javase -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
+        <!--redisson-->
+        <!-- https://mvnrepository.com/artifact/org.redisson/redisson -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.38.1</version>
+        </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/com.hankcs/hanlp -->
+        <dependency>
+            <groupId>com.hankcs</groupId>
+            <artifactId>hanlp</artifactId>
+            <version>portable-1.8.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.smagical.bot</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.smagical.bot</groupId>
+            <artifactId>tg</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.shardingsphere/shardingsphere-jdbc -->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>shardingsphere-jdbc</artifactId>
+            <version>5.5.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>4.0.26</version>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!--        <resources>-->
+        <!--            <resource>-->
+        <!--                <directory>libs</directory>-->
+        <!--                <targetPath>/</targetPath>-->
+        <!--                <includes>-->
+        <!--                    <include>**/*.jar</include>-->
+        <!--                </includes>-->
+        <!--            </resource>-->
+        <!--        </resources>-->
+        <plugins>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-compiler-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <source>21</source>-->
+            <!--                    <target>21</target>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>copy</id>-->
+            <!--                        <phase>package</phase>-->
+            <!--                        <configuration>-->
+            <!--                            <outputDirectory>-->
+            <!--                                ${project.build.directory}/lib-->
+            <!--                            </outputDirectory>-->
+            <!--                        </configuration>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+            <plugin>
+                <!-- 需要指定启动类，否则报错。-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <!-- 生成的项目JAR包中，不要包含pom.xml和pom.properties这两个文件 -->
+                        <addMavenDescriptor>true</addMavenDescriptor>
+                        <manifest>
+                            <!-- 是否要把第三方依赖的JAR包加入到类构建路径 -->
+                            <addClasspath>true</addClasspath>
+                            <!-- 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 -->
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <!-- 项目主启动类 -->
+                            <mainClass>io.github.smagical.bot.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>win</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <!-- 是否要把第三方依赖的JAR包加入到类构建路径 -->
+                                    <addClasspath>true</addClasspath>
+                                    <!-- 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 -->
+                                    <classpathPrefix>lib</classpathPrefix>
+                                    <mainClass>
+                                        io.github.smagical.bot.Main
+                                    </mainClass>
+
+                                </manifest>
+                            </archive>
+                            <descriptors>
+                                <descriptor>${project.basedir}/assembly/assembly-win.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+<!--                    <execution>-->
+<!--                        <id>freebsd</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <archive>-->
+<!--                                <manifest>-->
+<!--                                    &lt;!&ndash; 是否要把第三方依赖的JAR包加入到类构建路径 &ndash;&gt;-->
+<!--                                    <addClasspath>true</addClasspath>-->
+<!--                                    &lt;!&ndash; 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 &ndash;&gt;-->
+<!--                                    <classpathPrefix>lib</classpathPrefix>-->
+<!--                                    <mainClass>-->
+<!--                                        io.github.smagical.bot.Main-->
+<!--                                    </mainClass>-->
+
+<!--                                </manifest>-->
+<!--                            </archive>-->
+<!--                            <descriptors>-->
+<!--                                <descriptor>${project.basedir}/assembly/assembly-freebsd.xml</descriptor>-->
+<!--                            </descriptors>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                    <execution>-->
+<!--                        <id>ubuntu20</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <archive>-->
+<!--                                <manifest>-->
+<!--                                    &lt;!&ndash; 是否要把第三方依赖的JAR包加入到类构建路径 &ndash;&gt;-->
+<!--                                    <addClasspath>true</addClasspath>-->
+<!--                                    &lt;!&ndash; 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 &ndash;&gt;-->
+<!--                                    <classpathPrefix>lib</classpathPrefix>-->
+<!--                                    <mainClass>-->
+<!--                                        io.github.smagical.bot.Main-->
+<!--                                    </mainClass>-->
+
+<!--                                </manifest>-->
+<!--                            </archive>-->
+<!--                            <descriptors>-->
+<!--                                <descriptor>${project.basedir}/assembly/assembly-ubuntu18.xml</descriptor>-->
+<!--                            </descriptors>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                    <execution>-->
+<!--                        <id>debain11</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <archive>-->
+<!--                                <manifest>-->
+<!--                                    &lt;!&ndash; 是否要把第三方依赖的JAR包加入到类构建路径 &ndash;&gt;-->
+<!--                                    <addClasspath>true</addClasspath>-->
+<!--                                    &lt;!&ndash; 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 &ndash;&gt;-->
+<!--                                    <classpathPrefix>lib</classpathPrefix>-->
+<!--                                    <mainClass>-->
+<!--                                        io.github.smagical.bot.Main-->
+<!--                                    </mainClass>-->
+
+<!--                                </manifest>-->
+<!--                            </archive>-->
+<!--                            <descriptors>-->
+<!--                                <descriptor>${project.basedir}/assembly/assembly-debain11.xml</descriptor>-->
+<!--                            </descriptors>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+                </executions>
+            </plugin>
+        </plugins>
+
+    </build>
+    <repositories>
+        <repository>
+            <id>central-repos</id>
+
+            <name>Central Repository</name>
+            <layout>default</layout>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+</project>

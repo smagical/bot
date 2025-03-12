@@ -4,5 +4,24 @@ APP="leetcode.jar"
 export JAVA_VERSION="21"
 run_dir=$(dirname $(readlink -f "$0"))
 cd $run_dir
-export HANLP_ROOT=$run_dir
-./run.sh start $APP
+time=$(date "+%Y-%m-%d %H:%M:%S")
+echo ----------------------------$time----------------- >> start.log
+echo "" >> start.log
+./run.sh start $APP >> start.log
+echo "" >> start.log
+echo ----------------------------$time----------------- >> start.log
+echo "" >> start.log
+echo "" >> start.log
+
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+echo "" >> start.log
+
+

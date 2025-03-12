@@ -41,3 +41,6 @@ build/
 .DS_Store
 src/main/java/io/github/smagical/bot/not.text!/libs/data/
 !/libs/data/
+!/tg.properties
+
+**/**/tg.properties

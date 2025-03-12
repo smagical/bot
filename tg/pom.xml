@@ -14,26 +14,9 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <lucene.version>10.0.0</lucene.version>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/com.h2database/h2 -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5 -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>5.4</version>
-        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
@@ -54,32 +37,11 @@
             <artifactId>lombok</artifactId>
             <version>1.18.34</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.openjdk.nashorn/nashorn-core -->
-        <dependency>
-            <groupId>org.openjdk.nashorn</groupId>
-            <artifactId>nashorn-core</artifactId>
-            <version>15.4</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.htmlunit/htmlunit -->
-        <dependency>
-            <groupId>org.htmlunit</groupId>
-            <artifactId>htmlunit</artifactId>
-            <version>4.4.0</version>
-        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>2.0.16</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>1.5.6</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.google.zxing/core -->
@@ -96,109 +58,12 @@
             <version>3.5.3</version>
         </dependency>
 
-<!--        lucene-->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analysis-common</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-highlighter</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-queryparser</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queries</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-memory</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-misc</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-sandbox</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-suggest</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-join</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-grouping</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-expressions</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-facet</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
 
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.lucene/lucene-demo &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.lucene</groupId>-->
-<!--            <artifactId>lucene-demo</artifactId>-->
-<!--            <version>${lucene.version}</version>-->
-<!--        </dependency>-->
-
-
+        <!-- https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine -->
         <dependency>
-            <groupId>com.hankcs.nlp</groupId>
-            <artifactId>hanlp-lucene-plugin</artifactId>
-            <version>1.1.7</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.hankcs</groupId>
-                    <artifactId>hanlp</artifactId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>lucene-analyzers-common</artifactId>
-                    <groupId>org.apache.lucene</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>lucene-core</artifactId>
-                    <groupId>org.apache.lucene</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>lucene-queryparser</artifactId>
-                    <groupId>org.apache.lucene</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/com.hankcs/hanlp -->
-        <dependency>
-            <groupId>com.hankcs</groupId>
-            <artifactId>hanlp</artifactId>
-            <version>portable-1.8.4</version>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.0</version>
         </dependency>
 
         <dependency>
@@ -316,6 +181,54 @@
                             </archive>
                             <descriptors>
                                 <descriptor>${project.basedir}/assembly/assembly-freebsd.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ubuntu20</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <!-- 是否要把第三方依赖的JAR包加入到类构建路径 -->
+                                    <addClasspath>true</addClasspath>
+                                    <!-- 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 -->
+                                    <classpathPrefix>lib</classpathPrefix>
+                                    <mainClass>
+                                        io.github.smagical.bot.Main
+                                    </mainClass>
+
+                                </manifest>
+                            </archive>
+                            <descriptors>
+                                <descriptor>${project.basedir}/assembly/assembly-ubuntu18.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>debain11</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <!-- 是否要把第三方依赖的JAR包加入到类构建路径 -->
+                                    <addClasspath>true</addClasspath>
+                                    <!-- 外部依赖JAR包的存放路径，为了在MANIFEST.MF文件中指定外部依赖的路径 -->
+                                    <classpathPrefix>lib</classpathPrefix>
+                                    <mainClass>
+                                        io.github.smagical.bot.Main
+                                    </mainClass>
+
+                                </manifest>
+                            </archive>
+                            <descriptors>
+                                <descriptor>${project.basedir}/assembly/assembly-debain11.xml</descriptor>
                             </descriptors>
                         </configuration>
                     </execution>

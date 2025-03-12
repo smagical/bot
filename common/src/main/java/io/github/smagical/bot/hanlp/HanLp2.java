@@ -67,7 +67,7 @@ public class HanLp2 implements AutoCloseable{
     }
 
     public HanLp2() {
-        this(HanLp2.COARSE_ELECTRA_SMALL_ZH);
+        this(HanLp2.FINE_ELECTRA_SMALL_ZH);
     }
 
     public List<Term> seg(String text) {

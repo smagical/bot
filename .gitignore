@@ -46,3 +46,5 @@ tdlib.log
 
 base*/
 dll
+*.yml
+/**/*.yml
