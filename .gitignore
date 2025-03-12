@@ -43,7 +43,7 @@ tddb
 tdlib.log
 *.log
 **/**/*.log!/base/
-
+vv
 base*/
 dll
 *.yml
