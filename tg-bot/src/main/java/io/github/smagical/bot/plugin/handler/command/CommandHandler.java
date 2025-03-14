@@ -68,6 +68,7 @@ public   interface CommandHandler extends PluginHandler {
         Permission permission = Permission.USER;
         CommandType type = CommandType.USER;
         CommandFunction function;
+        boolean isAllRun = false;
     }
 
     /**

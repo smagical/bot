@@ -5,17 +5,27 @@ import io.github.smagical.bot.plugin.SmagicalTgPlugin;
 import org.redisson.api.RBucket;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RedisAuthHandler implements AuthenticationHandler{
 
     private SmagicalTgPlugin plugin;
+    private Set<String> commandWhitelist;
+
 
     public RedisAuthHandler(SmagicalTgPlugin plugin) {
         this.plugin = plugin;
+        commandWhitelist = new HashSet<>();
     }
 
     @Override
     public boolean authenticate( MessageInfo messageInfo) {
+        if (messageInfo.isCommand()){
+            if (commandWhitelist.contains(messageInfo.getMessageText().split("\\s+")[0])){
+                return true;
+            }
+        }
         String uuid = "tg_bot:auth:"+messageInfo.getChatId()+":"+ messageInfo.getMessageId();
         RBucket<String> rBuckets =  plugin.getRedissonClient().getBucket(uuid);
          if (rBuckets.setIfAbsent(plugin.getConfiguration().getInstanceId(), Duration.ofSeconds(30))){
@@ -27,4 +37,13 @@ public class RedisAuthHandler implements AuthenticationHandler{
          }
          return  false;
     }
+
+    public void addAllRun(String command){
+        commandWhitelist.add(command);
+    }
+
+    public void  removeAllRun(String command){
+        commandWhitelist.remove(command);
+    }
+
 }

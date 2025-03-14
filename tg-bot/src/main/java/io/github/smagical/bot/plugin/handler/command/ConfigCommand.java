@@ -20,6 +20,7 @@ public class ConfigCommand implements CommandHandler{
                 .description("/config_pull [pull db config]")
                 .cmd("/config_pull")
                 .function(this::pullConfig)
+                .isAllRun(true)
                 .build();
         CommandInfo configUpdate= CommandInfo.builder()
                 .type(CommandType.USER)

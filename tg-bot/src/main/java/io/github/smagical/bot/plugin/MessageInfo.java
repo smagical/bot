@@ -1,7 +1,9 @@
 package io.github.smagical.bot.plugin;
 
 import io.github.smagical.bot.tg.util.ClientUtils;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class MessageInfo {
     private long messageId;
     private String messageText;
@@ -36,6 +38,7 @@ public class MessageInfo {
     public void setMessageText(String messageText) {
         if (messageText == null) messageText = "";
         this.messageText = messageText.strip();
+
         if (messageText.endsWith(ClientUtils.END)) senderIsBot = true;
         if (messageText.startsWith("/")) isCommand = true;
     }

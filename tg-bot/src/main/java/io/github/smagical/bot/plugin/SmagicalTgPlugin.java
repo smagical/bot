@@ -293,7 +293,14 @@ public class SmagicalTgPlugin implements Plugin {
                     .setAddress("redis://" + configuration.getRedis().getHost() + ":" + configuration.getRedis().getPort())
                     .setClientName("tg_bot");
             this.redissonClient = Redisson.create(redisConfig);
-            this.authenticationHandlers.add(new RedisAuthHandler(this));
+            RedisAuthHandler cluster = new  RedisAuthHandler(this);
+            for (CommandHandler commandHandler : this.commandHandlers) {
+                for (CommandHandler.CommandInfo commandInfo : commandHandler.getCommandList()) {
+                    if (commandInfo.isAllRun())
+                        cluster.addAllRun(commandInfo.getCmd());
+                }
+            }
+            this.authenticationHandlers.add(cluster);
             botCommand.reportOnline();
 
         }
