@@ -1,6 +1,7 @@
 #!/usr/local/bin/bash
 #!/bin/bash
 
+run_dir=$(dirname $(readlink -f "$0"))
 #这里可替换为你自己的执行程序，其他代码无需更改，和jar包放在统计目录
 APP_NAME=$2
 APP_PATH=$2
@@ -31,7 +32,7 @@ start(){
   if [ $? -eq "0" ]; then
     echo "${APP_NAME} is already running. pid=${pid} ."
   else 
-    nohup java -Djava.library.path=. -Dtginfo=tg.properties  -Xms256m -Xmx256m -jar ${APP_PATH} &>${APP_NAME}.log &
+    nohup java -Djava.library.path=.  -Xms256m -Xmx256m -jar ${APP_PATH} --config=bot.yml &>${APP_NAME}.log &
     echo "${APP_NAME} start success"
   fi
 }

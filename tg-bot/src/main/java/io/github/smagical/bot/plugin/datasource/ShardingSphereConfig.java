@@ -25,6 +25,9 @@ public class ShardingSphereConfig {
 
     public static DataSource getDataSource(TgConfiguration configuration) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, SQLException {
         Map<String,DataSource> dataSourceMap = getDataSourceMap(configuration.getDataSources());
+        if (dataSourceMap.size() == 1){
+            return dataSourceMap.values().iterator().next();
+        }
         Collection<RuleConfiguration> ruleConfigs = List.of(
                 createBroadcastRuleConfiguration(),createShardingRuleConfiguration(dataSourceMap)
         );

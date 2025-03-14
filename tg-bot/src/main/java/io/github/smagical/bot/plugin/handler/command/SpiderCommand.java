@@ -14,10 +14,7 @@ import org.drinkless.tdlib.TdApi;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class SpiderCommand implements CommandHandler{
@@ -25,6 +22,10 @@ public class SpiderCommand implements CommandHandler{
     private List<CommandInfo> commandInfoList = new ArrayList<>();
     private AdFilter filter;
     private ExecutorService executor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors()>3?
+                    Runtime.getRuntime().availableProcessors()/3*2 : 1
+    );
+    private ExecutorService getLinkExecutor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors()>3?
                     Runtime.getRuntime().availableProcessors()/3*2 : 1
     );
@@ -99,6 +100,8 @@ public class SpiderCommand implements CommandHandler{
                         BlackAndWhiteListAdFilter.white.clear();
                         return;
                     }
+                    BlackAndWhiteListAdFilter.black.clear();
+                    BlackAndWhiteListAdFilter.white.clear();
                     Arrays.stream(str.toString().strip()
                                     .split(","))
                             .forEach(adWord->{
@@ -120,7 +123,7 @@ public class SpiderCommand implements CommandHandler{
             BlackAndWhiteListAdFilter.black.remove(args[0].strip());
         }
         withSQLAndNumCatch(()->{
-            TgBotInfo info = DbUtil.selectTgBotInfoByName(plugin.getDataSource(),"AD");
+            TgBotInfo info = DbUtil.TgBotInfoDb.selectTgBotInfoByName(plugin.getDataSource(),"AD");
             HashSet<String> adSet = new HashSet<>();
             if (info != null) {
                 adSet.addAll(Arrays.stream(info.getAttrValue().split(",")).map(String::strip).collect(Collectors.toSet()));
@@ -130,7 +133,7 @@ public class SpiderCommand implements CommandHandler{
             }
             adSet.remove(args[0].strip());
             info.setAttrValue(SegUtil.concat(adSet.stream().toList(),","));
-            DbUtil.insertOrUpdateTgBotInfo(plugin.getDataSource(),info);
+            DbUtil.TgBotInfoDb.insertOrUpdateTgBotInfo(plugin.getDataSource(),info);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -148,7 +151,7 @@ public class SpiderCommand implements CommandHandler{
             BlackAndWhiteListAdFilter.black.add(args[0].strip());
         }
         withSQLAndNumCatch(()->{
-            TgBotInfo info = DbUtil.selectTgBotInfoByName(plugin.getDataSource(),"AD");
+            TgBotInfo info = DbUtil.TgBotInfoDb.selectTgBotInfoByName(plugin.getDataSource(),"AD");
             HashSet<String> adSet = new HashSet<>();
             if (info != null) {
                 adSet.addAll(Arrays.stream(info.getAttrValue().split(",")).map(String::strip).collect(Collectors.toSet()));
@@ -158,7 +161,7 @@ public class SpiderCommand implements CommandHandler{
             }
             adSet.add(args[0].strip());
             info.setAttrValue(SegUtil.concat(adSet.stream().toList(),","));
-            DbUtil.insertOrUpdateTgBotInfo(plugin.getDataSource(),info);
+            DbUtil.TgBotInfoDb.insertOrUpdateTgBotInfo(plugin.getDataSource(),info);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -184,7 +187,7 @@ public class SpiderCommand implements CommandHandler{
 
     private void spiderUpdate(CommandParam commandParam) {
             withSQLAndNumCatch(()->{
-                List<TgSpider> spiders =  DbUtil.selectTgSpiderAll(plugin.getDataSource());
+                List<TgSpider> spiders =  DbUtil.TgSpiderDb.selectTgSpiderAll(plugin.getDataSource());
                 for (TgSpider spider : spiders) {
                     executor.submit(() -> {
                        withSQLAndNumCatch(()->{
@@ -200,7 +203,7 @@ public class SpiderCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            DbUtil.delTgSpiderById(plugin.getDataSource(), chatId);
+            DbUtil.TgSpiderDb.delTgSpiderById(plugin.getDataSource(), chatId);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -214,7 +217,7 @@ public class SpiderCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            TgSpider spider = DbUtil.selectLastTgSpiderById(plugin.getDataSource(), chatId);
+            TgSpider spider = DbUtil.TgSpiderDb.selectLastTgSpiderById(plugin.getDataSource(), chatId);
             if(spider == null) {
                 TdApi.Chat chat = plugin.getBot().getChat(chatId);
                 if (chat == null) {
@@ -226,7 +229,7 @@ public class SpiderCommand implements CommandHandler{
                     return;
                 }
                 spider = new TgSpider(chatId,chat.title,0l);
-                DbUtil.insertTgSpider(plugin.getDataSource(), spider);
+                DbUtil.TgSpiderDb.insertTgSpider(plugin.getDataSource(), spider);
             }
             final TgSpider tgSpiderTmp = spider;
             executor.submit(
@@ -252,7 +255,12 @@ public class SpiderCommand implements CommandHandler{
                 helper.setPageSize(Integer.parseInt(args[1]));
             }
 
-            helper = DbUtil.selectTgSpiderAll(plugin.getDataSource(),helper);
+            helper.setMessages(
+                    DbUtil.TgSpiderDb.selectTgSpiderAll(plugin.getDataSource(),helper.getPageSize(),helper.getPage())
+            );
+            helper.setTotal(
+                    DbUtil.TgSpiderDb.selectTgSpiderCountAll(plugin.getDataSource())
+            );
             List<String> message = new ArrayList<>();
             Set<Integer> codeIndex = new HashSet<>();
             for (TgSpider helperMessage : helper.getMessages()) {
@@ -281,6 +289,7 @@ public class SpiderCommand implements CommandHandler{
             long nums = 0l;
             long SEND_MESSAGE = 1000l;
             long send_message = SEND_MESSAGE;
+            boolean updateSpiderLast = false;
 
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
@@ -295,12 +304,109 @@ public class SpiderCommand implements CommandHandler{
                         spider_last,
                         200
                 );
+
+
                 if (messageCollections.isEmpty()) {
                     space_num++;
+                    if (space_num >= 3){
+                        spider.setLastSpiderId(last_id);
+                        DbUtil.TgSpiderDb.updateTgSpider(
+                                plugin.getDataSource(),
+                                spider
+                        );
+                        ClientUtils.sendTextMessage(
+                                plugin.getBot().getClient(),
+                                commandParam.getChatId(),
+                                String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),nums)
+                        );
+                        return;
+                    }
+
+                    continue;
                 }
-                if (space_num > 10){
+
+                List<TgMessage> messages =  new ArrayList<>();
+                synchronized (messageCollections) {
+                    for (TdApi.Message message : messageCollections) {
+
+                        last_id = Math.max(last_id,message.id);
+                        if (spider_last == 0) spider_last = message.id;
+                        else spider_last =  Math.min(spider_last,message.id);
+                        TgMessage tgMessage = new TgMessage();
+                        tgMessage.setChatId(message.chatId);
+                        tgMessage.setId(message.id);
+                        tgMessage.setAblum(message.mediaAlbumId);
+
+                        if (message.content.getConstructor() == TdApi.MessageText.CONSTRUCTOR){
+                            tgMessage.setMessage(
+                                    ((TdApi.MessageText)message.content).text.text
+                            );
+                        }else if (message.content.getConstructor() == TdApi.MessageVideo.CONSTRUCTOR){
+                            TdApi.MessageVideo video = (TdApi.MessageVideo)message.content;
+                            tgMessage.setMessage(video.caption.text);
+                        }else if (message.content.getConstructor() == TdApi.MessagePhoto.CONSTRUCTOR){
+                            TdApi.MessagePhoto photo = (TdApi.MessagePhoto)message.content;
+                            tgMessage.setMessage(photo.caption.text);
+                        }
+
+                        try {
+                            if (message.id < spider.getLastSpiderId()) {
+                                updateSpiderLast = true;
+                                break;
+                            }
+                            if (tgMessage.getMessage() == null || tgMessage.getMessage().isBlank()){
+                                continue;
+                            }
+
+                            if (filter.filter(tgMessage.getMessage())) {
+                                continue;
+                            }
+
+                            messages.add(tgMessage);
+                        }catch (Exception e){
+
+                        }
+
+                    }
+                }
+
+
+                CountDownLatch latch = new CountDownLatch(messages.size());
+                for (final TgMessage tgMessage : messages) {
+                    getLinkExecutor.submit(
+                            ()->{
+                                try {
+                                    if (DbUtil.TgMessageDb.exitsTgMessage(plugin.getDataSource(), tgMessage.getId(),tgMessage.getChatId())){
+                                        return;
+                                    }
+                                    int count = 0;
+                                    while ((tgMessage.getLink() == null || tgMessage.getLink().isBlank()) && count++ < 2){
+                                        try {
+                                            tgMessage.setLink(ClientUtils.getMessageLink(
+                                                    plugin.getBot().getClient(),
+                                                    tgMessage.getChatId(),
+                                                    tgMessage.getId()
+                                            ));
+                                        } catch (InterruptedException e) {
+
+                                        }
+                                    }
+                                } catch (SQLException e) {
+
+                                }finally {
+                                    latch.countDown();
+                                }
+
+                            }
+                    );
+                }
+                latch.await();
+                messages = messages.stream().filter(e->e.getLink()!=null).collect(Collectors.toList());
+                if (updateSpiderLast) {
+                    DbUtil.TgMessageDb.insertTgMessage(plugin.getDataSource(),messages);
+                    messages.clear();
                     spider.setLastSpiderId(last_id);
-                    DbUtil.updateTgSpider(
+                    DbUtil.TgSpiderDb.updateTgSpider(
                             plugin.getDataSource(),
                             spider
                     );
@@ -311,58 +417,9 @@ public class SpiderCommand implements CommandHandler{
                     );
                     return;
                 }
-                List<TgMessage> messages =  new ArrayList<>();
-                for (TdApi.Message message : messageCollections) {
+                if (messages.isEmpty()) continue;
 
-                    last_id = Math.max(last_id,message.id);
-                    if (spider_last == 0) spider_last = message.id;
-                    else spider_last =  Math.min(spider_last,message.id);
-
-                    if (message.content.getConstructor() != TdApi.MessageText.CONSTRUCTOR) continue;
-
-
-                    try {
-                        if (message.id < spider.getLastSpiderId()) {
-                            DbUtil.insertTgMessage(plugin.getDataSource(),messages);
-                            messages.clear();
-                            spider.setLastSpiderId(last_id);
-                            DbUtil.updateTgSpider(
-                                    plugin.getDataSource(),
-                                    spider
-                            );
-                            ClientUtils.sendTextMessage(
-                                    plugin.getBot().getClient(),
-                                    commandParam.getChatId(),
-                                    String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),nums)
-                            );
-                            return;
-                        }
-                        TdApi.MessageText messageText = (TdApi.MessageText) message.content;
-                        if (filter.filter(messageText.text.text)) {
-                            continue;
-                        }
-                        if (!DbUtil.exitsTgMessage(plugin.getDataSource(), message.id,message.chatId)) {
-
-                            TgMessage tgMessage = new TgMessage();
-                            tgMessage.setChatId(message.chatId);
-                            tgMessage.setId(message.id);
-                            tgMessage.setAblum(message.mediaAlbumId);
-                            tgMessage.setLink(ClientUtils.getMessageLink(
-                                    plugin.getBot().getClient(),
-                                    message.chatId,
-                                    message.id
-                            ));
-                            tgMessage.setMessage(messageText.text.text);
-
-                            messages.add(tgMessage);
-                        }
-                    }catch (Exception e){
-                        int a= 1;
-                    }
-
-                }
-
-                DbUtil.insertTgMessage(plugin.getDataSource(),messages);
+                DbUtil.TgMessageDb.insertTgMessage(plugin.getDataSource(),messages.stream().filter(e->e.getLink()!=null).collect(Collectors.toList()));
                 nums+=messages.size();
                 send_message-=messages.size();
                 messages.clear();
@@ -371,7 +428,7 @@ public class SpiderCommand implements CommandHandler{
                     ClientUtils.sendTextMessage(
                             plugin.getBot().getClient(),
                             commandParam.getChatId(),
-                            String.format(" spider %s:%s nums %lld", spider.getChatName(),spider.getChatId(),nums)
+                            String.format(" spider %s:%s nums %s", spider.getChatName(),spider.getChatId(),nums)
                     );
                     send_message = SEND_MESSAGE;
                 }
@@ -379,6 +436,7 @@ public class SpiderCommand implements CommandHandler{
 
 
     }
+
 
     @Override
     public boolean handler( CommandParam commandParam) {

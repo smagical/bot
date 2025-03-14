@@ -16,6 +16,7 @@ public class ChatPendingJoinRequestsHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatPendingJoinRequests chatPendingJoinRequests = (TdApi.UpdateChatPendingJoinRequests) object;
         log.debug("Chat pending join requests received:\n {}", chatPendingJoinRequests);
         TdApi.Chat chat = getBot().getChat(chatPendingJoinRequests.chatId);
+
         if (chat != null) {
             synchronized (chat){
                 chat.pendingJoinRequests = chat.pendingJoinRequests;

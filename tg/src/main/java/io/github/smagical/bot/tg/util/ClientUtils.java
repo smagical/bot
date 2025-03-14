@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ClientUtils {
     public final static int LIMIT = 50;
     public final static int RETRY = 5;
-    public final static long WAITE_TIME = 5 * 1000;
-    public final static String END= new String(new byte[]{(byte) 0xe2, (byte) 0x80, (byte) 0x8b});
+    public final static long WAITE_TIME = 1 * 1000;
+    public final static String END= "\u200c";
 
     public static Collection<TdApi.Message> getChatHistory(
             Client client,Long chatId,long lastMessageId,int limit
@@ -29,6 +29,7 @@ public class ClientUtils {
         final AtomicBoolean flag = new AtomicBoolean(true);
         final AtomicInteger count = new AtomicInteger(RETRY);
 
+
         while (flag.get() && count.get() > 0) {
             int lastCount = res.size();
             CountDownLatch latch = new CountDownLatch(1);
@@ -40,6 +41,7 @@ public class ClientUtils {
                     new Client.ResultHandler() {
                         @Override
                         public void onResult(TdApi.Object object) {
+
                             switch (object.getConstructor()){
                                 case TdApi.Error.CONSTRUCTOR : {
                                     flag.set(false);
@@ -50,12 +52,14 @@ public class ClientUtils {
                                 case TdApi.Messages.CONSTRUCTOR : {
                                     TdApi.Messages messages = (TdApi.Messages)object;
                                     TdApi.Message[] messagesArray = messages.messages;
-                                    for (int i = 0; i < messagesArray.length; i++) {
-                                        if (dist.contains(messagesArray[i].id)) {
-                                            continue;
+                                    synchronized (res){
+                                        for (int i = 0; i < messagesArray.length; i++) {
+                                            if (dist.contains(messagesArray[i].id)) {
+                                                continue;
+                                            }
+                                            res.add(messagesArray[i]);
+                                            dist.add(messagesArray[i].id);
                                         }
-                                        res.add(messagesArray[i]);
-                                        dist.add(messagesArray[i].id);
                                     }
                                     if (res.size() >= limit) {
                                         flag.set(false);
@@ -96,7 +100,7 @@ public class ClientUtils {
                 latch.countDown();
             }
         });
-        latch.await(WAITE_TIME, TimeUnit.MILLISECONDS);
+        latch.await(WAITE_TIME * 5, TimeUnit.MILLISECONDS);
         return result.length() == 0 ? null : result.toString();
     }
 
@@ -251,6 +255,7 @@ public class ClientUtils {
             }
             message.append(messages[i]);
         }
+
         TdApi.FormattedText formattedText = new TdApi.FormattedText();
         formattedText.text = addEnd(message.toString());
         formattedText.entities = textEntities.toArray(new TdApi.TextEntity[0]);
@@ -304,6 +309,120 @@ public class ClientUtils {
     }
 
 
+    public static void editSendTextByTextUrlType(Client client, Long chatId,Long messageId , String[] messages, final Map<Integer,String> link) {
+        editSendTextByTextUrlType(client,chatId,messageId,messages,link);
+    }
+
+    public static void editSendTextByTextUrlType(Client client, Long chatId,Long messageId , String[] messages, final Map<Integer,String> link,int retryCount) {
+        editSendTextByTextUrlType(client,chatId,messageId,messages,link,retryCount);
+    }
+
+    public static void editSendTextByTextUrlType(Client client, Long chatId,Long messageId , String[] messages, final Map<Integer,String> link,  TdApi.ReplyMarkup replyMarkup) {
+        editSendTextByTextUrlType(client,chatId,messageId,messages,link,replyMarkup,RETRY);
+    }
+
+    public static void editSendTextByTextUrlType(Client client, Long chatId,Long messageId , String[] messages, final Map<Integer,String> link,  TdApi.ReplyMarkup replyMarkup,int retryCount) {
+
+        editSendTextByType(client, chatId,messageId, messages, link.keySet(), (a, b,c) -> {
+            TdApi.TextEntity textEntity = new TdApi.TextEntity();
+            textEntity.offset = a.length();
+            TdApi.TextEntityTypeTextUrl textUrl = new TdApi.TextEntityTypeTextUrl();
+            textUrl.url = link.get(b);
+            textEntity.type = textUrl;
+            textEntity.length = c.length();
+            return textEntity;
+        },  replyMarkup, retryCount);
+    }
+
+    public static void editSendTextByCodeType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex, TdApi.InputMessageReplyTo replyTo){
+        editSendTextByCodeType(client,chatId,messageId,messages,codeIndex,null,RETRY);
+    }
+
+    public static void editSendTextByCodeType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex,int  retryCount){
+        editSendTextByCodeType(client,chatId,messageId,messages,codeIndex,retryCount);
+    }
+
+    public static void editSendTextByCodeType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex,  TdApi.ReplyMarkup replyMarkup){
+        editSendTextByCodeType(client,chatId,messageId,messages,codeIndex,replyMarkup,RETRY);
+    }
+
+    public static void editSendTextByCodeType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex,  TdApi.ReplyMarkup replyMarkup,int retryCount){
+
+        editSendTextByType(client,chatId,messageId,messages,codeIndex,(a,b,c)->{
+            TdApi.TextEntity textEntity = new TdApi.TextEntity();
+            textEntity.offset = a.length();
+            textEntity.type = new TdApi.TextEntityTypeCode();
+            textEntity.length = c.length();
+            return textEntity;
+        },replyMarkup,retryCount);
+    }
+
+    public static void editSendTextByType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex, TextEntitySupplier textEntitySupplier ,TdApi.InputMessageReplyTo replyTo){
+        editSendTextByType(client,chatId,messageId,messages,codeIndex,textEntitySupplier,null,RETRY);
+    }
+
+    public static void editSendTextByType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex, TextEntitySupplier textEntitySupplier , TdApi.ReplyMarkup replyMarkup){
+        editSendTextByType(client,chatId,messageId,messages,codeIndex,textEntitySupplier,replyMarkup,RETRY);
+    }
+
+    public static void editSendTextByType(Client client, Long chatId,Long messageId , String[] messages, Set<Integer> codeIndex, TextEntitySupplier textEntitySupplier , TdApi.ReplyMarkup replyMarkup, int retryCount){
+        StringBuilder message = new StringBuilder();
+        List<TdApi.TextEntity>  textEntities = new ArrayList<>();
+        for (int i = 0; i < messages.length; i++) {
+            if (codeIndex.contains(i)){
+                textEntities.add(textEntitySupplier.get(message.toString(),i,messages[i]));
+            }
+            message.append(messages[i]);
+        }
+
+        TdApi.FormattedText formattedText = new TdApi.FormattedText();
+        formattedText.text = addEnd(message.toString());
+        formattedText.entities = textEntities.toArray(new TdApi.TextEntity[0]);
+        editSend(client,chatId,messageId,formattedText,replyMarkup,retryCount);
+    }
+
+
+
+
+    public static void editSend(Client client, Long chatId,Long messageId , TdApi.FormattedText formattedText, int retryCount){
+        editSend(client,chatId,messageId,formattedText,null,retryCount);
+    }
+
+    public static void editSend(Client client, Long chatId,Long messageId , TdApi.FormattedText formattedText){
+        editSend(client,chatId,messageId,formattedText,null,RETRY);
+    }
+
+
+
+    public static void editSend(Client client, Long chatId,Long messageId , TdApi.FormattedText formattedText, TdApi.ReplyMarkup replyMarkup){
+        editSend(client,chatId,messageId,formattedText,null,RETRY);
+    }
+
+
+    public static void editSend(Client client, Long chatId,Long messageId ,TdApi.FormattedText formattedText,  TdApi.ReplyMarkup replyMarkup, int retryCount){
+        TdApi.EditMessageText editSendMessage = new TdApi.EditMessageText();
+        editSendMessage.chatId = chatId;
+        editSendMessage.messageId = messageId;
+        TdApi.InputMessageText inputMessageText = new TdApi.InputMessageText();
+        formattedText.text = addEnd(formattedText.text);
+        inputMessageText.text = formattedText;
+        inputMessageText.linkPreviewOptions = new TdApi.LinkPreviewOptions();
+        inputMessageText.linkPreviewOptions.isDisabled = true;
+        editSendMessage.replyMarkup = replyMarkup;
+        editSendMessage.inputMessageContent = inputMessageText;
+        client.send(editSendMessage, new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.Object object) {
+                if (object.getConstructor() == TdApi.Error.CONSTRUCTOR) {
+                    log.error("{}",object);
+                    if (retryCount <= 0){
+                        return;
+                    }
+                    editSend(client,chatId,messageId,formattedText,replyMarkup,retryCount-1);
+                }
+            }
+        });
+    }
 
     private static String addEnd(String text){
         if (text == null || text.length() == 0)

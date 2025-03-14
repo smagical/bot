@@ -16,6 +16,9 @@ public class ChatMessageAutoDeleteTimeHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatMessageAutoDeleteTime chatMessageAutoDeleteTime = (TdApi.UpdateChatMessageAutoDeleteTime) object;
         log.debug("chatMessageAutoDeleteTime: \n {}", chatMessageAutoDeleteTime);
         TdApi.Chat chat = getBot().getChat(chatMessageAutoDeleteTime.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.messageAutoDeleteTime = chatMessageAutoDeleteTime.messageAutoDeleteTime;
         }

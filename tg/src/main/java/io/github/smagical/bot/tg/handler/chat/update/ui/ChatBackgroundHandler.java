@@ -16,6 +16,9 @@ public class ChatBackgroundHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatBackground chatBackground = (TdApi.UpdateChatBackground) object;
         log.debug("\n{}",chatBackground);
         TdApi.Chat chat = getBot().getChat(chatBackground.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.background = chatBackground.background;
         }

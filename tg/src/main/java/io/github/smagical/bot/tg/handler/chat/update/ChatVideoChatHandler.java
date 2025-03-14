@@ -16,6 +16,7 @@ public class ChatVideoChatHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatVideoChat chatVideoChat = (TdApi.UpdateChatVideoChat) object;
         log.debug("Chat video chat:\n {}", chatVideoChat);
         TdApi.Chat chat = getBot().getChat(chatVideoChat.chatId);
+
         if (chat != null) {
             synchronized (chat) {
                 chat.videoChat = chatVideoChat.videoChat;

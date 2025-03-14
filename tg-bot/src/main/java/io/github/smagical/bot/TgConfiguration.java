@@ -26,6 +26,7 @@ public class TgConfiguration {
     private String instanceId = UUID.randomUUID().toString();
     private Set<Long> adminIds = new HashSet<>();
     private Map<String,Object> properties = new HashMap<>();
+    private boolean onlyAdmin = false;
     private String model = "singleton";
     private  final static Object lock = new Object();
 
@@ -54,6 +55,13 @@ public class TgConfiguration {
                     }
                 }
         );
+        addUpdateListener("onlyAdmin",str->{
+            if (str instanceof String) {
+                this.onlyAdmin = Boolean.parseBoolean(str.toString());
+            }else if (str instanceof Boolean) {
+                this.onlyAdmin = (Boolean)str;
+            }
+        });
     }
 
     public synchronized void addUpdateListener(String key, Consumer<Object> consumer) {
@@ -126,7 +134,7 @@ public class TgConfiguration {
 
     public void loadFromDatabase(DataSource dataSource) {
         try {
-            for (TgBotInfo info : DbUtil.selectTgBotInfoAll(dataSource)) {
+            for (TgBotInfo info : DbUtil.TgBotInfoDb.selectTgBotInfoAll(dataSource)) {
                 setProperty(info.getAttrName(), info.getAttrValue());
             }
         } catch (SQLException e) {
@@ -136,6 +144,10 @@ public class TgConfiguration {
 
     public Set<Long> getAdminIds() {
         return Collections.unmodifiableSet(adminIds);
+    }
+
+    public boolean isOnlyAdmin() {
+        return onlyAdmin;
     }
 
     @Data

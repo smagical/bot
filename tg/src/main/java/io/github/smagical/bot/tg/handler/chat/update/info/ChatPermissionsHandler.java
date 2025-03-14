@@ -16,6 +16,9 @@ public class ChatPermissionsHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatPermissions chatPermissions = (TdApi.UpdateChatPermissions) object;
         log.debug("Chat permissions: \n{}", chatPermissions);
         TdApi.Chat chat = getBot().getChat(chatPermissions.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.permissions = chatPermissions.permissions;
         }

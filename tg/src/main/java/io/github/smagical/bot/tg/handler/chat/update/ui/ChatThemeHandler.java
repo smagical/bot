@@ -16,6 +16,9 @@ public class ChatThemeHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatTheme chatTheme = (TdApi.UpdateChatTheme) object;
         log.debug("chat theme: \n{}", chatTheme);
         TdApi.Chat chat = getBot().getChat(chatTheme.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.themeName = chatTheme.themeName;
         }

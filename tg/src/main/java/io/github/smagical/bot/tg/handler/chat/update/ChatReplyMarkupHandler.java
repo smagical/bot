@@ -16,6 +16,7 @@ public class ChatReplyMarkupHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatReplyMarkup chatReplyMarkup = (TdApi.UpdateChatReplyMarkup) object;
         log.debug("chat reply markup: \n {}", chatReplyMarkup);
         TdApi.Chat chat = getBot().getChat(chatReplyMarkup.chatId);
+
         if (chat != null) {
             synchronized (chat){
                 chat.replyMarkupMessageId = chatReplyMarkup.replyMarkupMessageId;

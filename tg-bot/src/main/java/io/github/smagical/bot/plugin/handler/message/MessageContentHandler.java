@@ -14,6 +14,7 @@ import java.util.Arrays;
 public interface MessageContentHandler extends PluginHandler {
     boolean supports(Bot.LoginType loginType);
     void  handler( MessageInfo messageInfo);
+    void updateHandler( MessageInfo messageInfo);
 
     @Data
     @AllArgsConstructor
@@ -43,7 +44,7 @@ public interface MessageContentHandler extends PluginHandler {
             helper.setPage(page);
             return helper;
         }
-        if (query.length == 3){
+        if (query.length >= 3){
             Integer page = Integer.valueOf(query[1]);
             Integer pageSize = Integer.valueOf(query[2]);
             TgMessageHelper helper = new TgMessageHelper();

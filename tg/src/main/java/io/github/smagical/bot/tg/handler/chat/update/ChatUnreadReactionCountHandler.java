@@ -16,6 +16,7 @@ public class ChatUnreadReactionCountHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatUnreadReactionCount chatUnreadReactionCount = (TdApi.UpdateChatUnreadReactionCount) object;
         log.debug("Chat unread reaction count:\n {}", chatUnreadReactionCount);
         TdApi.Chat chat = getBot().getChat(chatUnreadReactionCount.chatId);
+
         if (chat != null) {
            synchronized (chat){
                chat.unreadReactionCount = chatUnreadReactionCount.unreadReactionCount;

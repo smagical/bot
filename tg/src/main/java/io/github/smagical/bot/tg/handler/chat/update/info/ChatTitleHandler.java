@@ -16,6 +16,9 @@ public class ChatTitleHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatTitle updateChatTitle = (TdApi.UpdateChatTitle) object;
         log.debug("\n{}",updateChatTitle);
         TdApi.Chat chat = getBot().getChat(updateChatTitle.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.title = updateChatTitle.title;
         }

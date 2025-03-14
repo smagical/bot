@@ -16,6 +16,9 @@ public class ChatHasProtectedContentHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatHasProtectedContent chatHasProtectedContent = (TdApi.UpdateChatHasProtectedContent) object;
         log.debug("chat has protected content:\n {}", chatHasProtectedContent);
         TdApi.Chat chat = getBot().getChat(chatHasProtectedContent.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.hasProtectedContent = chatHasProtectedContent.hasProtectedContent;
         }

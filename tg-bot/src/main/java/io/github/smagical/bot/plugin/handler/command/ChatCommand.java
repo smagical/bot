@@ -1,8 +1,8 @@
 package io.github.smagical.bot.plugin.handler.command;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.smagical.bot.plugin.SmagicalTgPlugin;
+import io.github.smagical.bot.plugin.datasource.cache.CacheManger;
 import io.github.smagical.bot.plugin.datasource.model.TgGroup;
 import io.github.smagical.bot.plugin.util.DbUtil;
 import io.github.smagical.bot.plugin.util.ParamsUtils;
@@ -18,7 +18,8 @@ public class ChatCommand implements CommandHandler{
 
     private List<CommandInfo> commandInfoList = new ArrayList<>();
     private SmagicalTgPlugin plugin;
-    private String adKeyPrefix = "tg_bot:code:";
+    private final String AD_KEY_PREFIX = "tg_bot:code:";
+    private final String CODE_CACHE_NAME = "CODE_CACHE_NAME";
 
     public ChatCommand(SmagicalTgPlugin plugin) {
         this.plugin = plugin;
@@ -102,7 +103,7 @@ public class ChatCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long userId = Long.parseLong(args[0]);
-            DbUtil.delAllTgGroupByUserId(plugin.getDataSource(),userId);
+            DbUtil.TgGroupDb.delAllTgGroupByUserId(plugin.getDataSource(),userId);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -117,7 +118,7 @@ public class ChatCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            DbUtil.delAllTgGroupByChatId(plugin.getDataSource(),chatId);
+            DbUtil.TgGroupDb.delAllTgGroupByChatId(plugin.getDataSource(),chatId);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
@@ -130,7 +131,7 @@ public class ChatCommand implements CommandHandler{
     private void groupList( CommandParam commandParam) {
 
         withSQLAndNumCatch(()->{
-            List<TgGroup> list = DbUtil.selectTgGroupAll(plugin.getDataSource());
+            List<TgGroup> list = DbUtil.TgGroupDb.selectTgGroupAll(plugin.getDataSource());
             HashMap<Long,String> ids = new HashMap<>();
             for (TgGroup tgGroup : list) {
                 if (ids.containsKey(tgGroup.getChatId())) continue;
@@ -165,7 +166,7 @@ public class ChatCommand implements CommandHandler{
         withSQLAndNumCatch(()->{
             Long userId = Long.parseLong(args[0]);
             List<TgGroup> list =
-                    DbUtil.selectTgGroupByUserId(plugin.getDataSource(),userId);
+                    DbUtil.TgGroupDb.selectTgGroupByUserId(plugin.getDataSource(),userId);
             List<TdApi.Chat> chats =
                     list.stream()
                             .map(e->plugin.getBot().getChat(e.getChatId()))
@@ -199,7 +200,7 @@ public class ChatCommand implements CommandHandler{
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
             List<TgGroup> list =
-                    DbUtil.selectTgGroupByChatId(plugin.getDataSource(),chatId);
+                    DbUtil.TgGroupDb.selectTgGroupByChatId(plugin.getDataSource(),chatId);
             List<TdApi.User> users =
                     list.stream()
                             .map(e->plugin.getBot().getUser(e.getInviteUserId()))
@@ -228,21 +229,34 @@ public class ChatCommand implements CommandHandler{
     }
 
 
-    private Cache<String,Long>  codeCache = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofMinutes(5l))
-            .softValues()
-            .build();
+
     private void chatInviteCode(CommandParam commandParam) {
              String[] args = commandParam.getArgs();
             ParamsUtils.CheckParamsByLen(args, 1);
             Long userId = null;
+
+        CacheManger.Cache<String,Long> cache;
         if ("singleton".equalsIgnoreCase(plugin.getConfiguration().getModel().strip())){
-            userId = codeCache.getIfPresent(args[0]);
+            cache = CacheManger.getCacheOrDefault(CODE_CACHE_NAME,()->{
+                return new CacheManger.CaffeineCache<String,Long>(
+                        Caffeine.newBuilder()
+                                .expireAfterWrite(Duration.ofMinutes(5l))
+                                .softValues()
+                                .build()
+                );
+            });
         }else {
-            userId = plugin.getRedissonClient().<Long>getBucket(adKeyPrefix+args[0])
-                    .getAndDelete();
+            cache = CacheManger.getCacheOrDefault(CODE_CACHE_NAME,()->{
+                return new CacheManger.RedisCache<Long>(
+                        plugin.getRedissonClient(), AD_KEY_PREFIX,Duration.ofMinutes(5l)
+                );
+            });
         }
+
+        userId = cache.get(args[0]);
+
         if (userId != null){
+                cache.remove(args[0]);
                 final Long userIdTmp = userId;
                 withSQLAndNumCatch(()->{
                     TdApi.Chat chat = plugin.getBot().getChat(commandParam.getChatId());
@@ -252,7 +266,7 @@ public class ChatCommand implements CommandHandler{
                             .inviteUserId(userIdTmp)
                             .chatName(chat.title)
                             .build();
-                    DbUtil.insertOrUpdateTgGroup(plugin.getDataSource(), tgGroup);
+                    DbUtil.TgGroupDb.insertOrUpdateTgGroup(plugin.getDataSource(), tgGroup);
                     ClientUtils.sendTextMessage(
                             plugin.getBot().getClient(),
                             commandParam.getChatId(),
@@ -272,11 +286,24 @@ public class ChatCommand implements CommandHandler{
     private void chatInviteGenera(CommandParam commandParam) {
 
         String uuid = UUID.randomUUID().toString().replace("-", "");
+        CacheManger.Cache<String,Long> cache;
         if ("singleton".equalsIgnoreCase(plugin.getConfiguration().getModel().strip())){
-            codeCache.put(uuid, commandParam.getUserId());
+            cache = CacheManger.getCacheOrDefault(CODE_CACHE_NAME,()->{
+                return new CacheManger.CaffeineCache<String,Long>(
+                        Caffeine.newBuilder()
+                                .expireAfterWrite(Duration.ofMinutes(5l))
+                                .softValues()
+                                .build()
+                );
+            });
         }else {
-            plugin.getRedissonClient().<Long>getBucket(adKeyPrefix+uuid).setIfAbsent(commandParam.getUserId(),Duration.ofMinutes(5l));
+            cache = CacheManger.getCacheOrDefault(CODE_CACHE_NAME,()->{
+                return new CacheManger.RedisCache<Long>(
+                        plugin.getRedissonClient(), AD_KEY_PREFIX,Duration.ofMinutes(5l)
+                );
+            });
         }
+        cache.put(uuid, commandParam.getUserId());
         String code = "CODE: ";
 
         ClientUtils.sendTextByCodeType(
@@ -308,8 +335,8 @@ public class ChatCommand implements CommandHandler{
                     .chatName(chat.title)
                     .inviteUserId(commandParam.getUserId())
                     .build();
-             if (!DbUtil.exitsTgGroupByChatIdAndUserId(plugin.getDataSource(),tgGroup)){
-                DbUtil.insertTgGroup(
+             if (!DbUtil.TgGroupDb.exitsTgGroupByChatIdAndUserId(plugin.getDataSource(),tgGroup)){
+                DbUtil.TgGroupDb.insertTgGroup(
                         plugin.getDataSource(),
                         tgGroup
                 );
@@ -337,7 +364,7 @@ public class ChatCommand implements CommandHandler{
                     .chatId(chatId)
                     .inviteUserId(commandParam.getUserId())
                     .build();
-            DbUtil.delTgGroupByChatIdAndUserId(plugin.getDataSource(),tgGroup);
+            DbUtil.TgGroupDb.delTgGroupByChatIdAndUserId(plugin.getDataSource(),tgGroup);
                     ClientUtils.sendTextMessage(
                             plugin.getBot().getClient(),
                             commandParam.getChatId(),

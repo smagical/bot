@@ -16,6 +16,7 @@ public class ChatUnreadMentionCountHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatUnreadMentionCount chatUnreadMentionCount = (TdApi.UpdateChatUnreadMentionCount) object;
         log.debug("Chat unread mention count:\n {}", chatUnreadMentionCount);
         TdApi.Chat chat = getBot().getChat(chatUnreadMentionCount.chatId);
+
         if (chat != null) {
            synchronized (chat){
                chat.unreadMentionCount = chatUnreadMentionCount.unreadMentionCount;

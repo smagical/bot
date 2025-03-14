@@ -19,6 +19,9 @@ public class ChatAvailableReactionsHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatAvailableReactions chatAvailableReactions = (TdApi.UpdateChatAvailableReactions) object;
         log.debug("Chat available reactions: \n{}", chatAvailableReactions);
         TdApi.Chat chat = getBot().getChat(chatAvailableReactions.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.availableReactions = chatAvailableReactions.availableReactions;
         }

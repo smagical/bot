@@ -16,6 +16,9 @@ public class ChatActionBarHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatActionBar chatActionBar = (TdApi.UpdateChatActionBar) object;
         log.debug("chatActionBar: \n{}", chatActionBar);
         TdApi.Chat chat = getBot().getChat(chatActionBar.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.actionBar = chatActionBar.actionBar;
         }

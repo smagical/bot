@@ -17,6 +17,9 @@ public class ChatDefaultDisableNotificationHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatDefaultDisableNotification chatDefaultDisableNotification = (TdApi.UpdateChatDefaultDisableNotification) object;
         log.debug("chatDefaultDisableNotification : \n{}", chatDefaultDisableNotification);
         TdApi.Chat chat = getBot().getChat(chatDefaultDisableNotification.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.defaultDisableNotification = chatDefaultDisableNotification.defaultDisableNotification;
         }

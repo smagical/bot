@@ -75,9 +75,10 @@ public class SmagicalTgPlugin implements Plugin {
         messageInfo.setChatId(callbackQuery.chatId);
         messageInfo.setMessageId(callbackQuery.messageId);
         messageInfo.setMessageText(message);
+
         for (MessageContentHandler messageHandler : messageHandlers) {
             if (messageHandler.supports(bot.getLoginType())){
-                messageHandler.handler(messageInfo);
+                messageHandler.updateHandler(messageInfo);
             }
         }
     }
@@ -93,7 +94,22 @@ public class SmagicalTgPlugin implements Plugin {
             messageInfo.setMessageText(messageContent.text.text.strip());
             messageInfo.setChatId(message.chatId);
             messageInfo.setMessageId(message.id);
+
             if (messageInfo.isSenderIsBot()) return;
+
+            TdApi.Chat chat = bot.getChat(message.chatId);
+            if (chat == null) return;
+            if (chat.type.getConstructor() == TdApi.ChatTypePrivate.CONSTRUCTOR) {
+                messageInfo.setChatType(MessageInfo.ChatType.USER);
+            }else {
+                messageInfo.setChatType(MessageInfo.ChatType.CHAT);
+            }
+
+            boolean auth = authenticationHandlers.stream()
+                    .allMatch(a -> a.authenticate(messageInfo));
+            if (!auth) {
+                return;
+            }
 
             if (message.senderId.getConstructor() == TdApi.MessageSenderUser.CONSTRUCTOR){
                 long userId = ((TdApi.MessageSenderUser)message.senderId).userId;
@@ -104,18 +120,11 @@ public class SmagicalTgPlugin implements Plugin {
                     return;
                 }
 
-                TdApi.Chat chat = bot.getChat(message.chatId);
-                if (chat == null) return;
-                if (chat.type.getConstructor() == TdApi.ChatTypePrivate.CONSTRUCTOR) {
-                    messageInfo.setChatType(MessageInfo.ChatType.USER);
-                    TdApi.User me = bot.getMe();
-                    if (me != null && me.id == messageInfo.getUserId())
-                        messageInfo.setChatType(MessageInfo.ChatType.ADMIN);
-                    else if (configuration.getAdminIds().contains(messageInfo.getUserId())){
-                        messageInfo.setChatType(MessageInfo.ChatType.ADMIN);
-                    }
-                }else {
-                    messageInfo.setChatType(MessageInfo.ChatType.CHAT);
+                TdApi.User me = bot.getMe();
+                if (me != null && me.id == messageInfo.getUserId())
+                    messageInfo.setChatType(MessageInfo.ChatType.ADMIN);
+                else if (configuration.getAdminIds().contains(messageInfo.getUserId())){
+                    messageInfo.setChatType(MessageInfo.ChatType.ADMIN);
                 }
 
             }else if (message.senderId.getConstructor() == TdApi.MessageSenderChat.CONSTRUCTOR){
@@ -124,13 +133,10 @@ public class SmagicalTgPlugin implements Plugin {
                 return;
             }
 
-
-
-
-            boolean auth = authenticationHandlers.stream()
-                    .allMatch(a -> a.authenticate(messageInfo));
-            if (!auth) {
-                return;
+            if (getConfiguration().isOnlyAdmin()){
+                if (messageInfo.getChatType() != MessageInfo.ChatType.ADMIN) {
+                    return;
+                }
             }
 
             if (messageInfo.isCommand()){
@@ -293,6 +299,23 @@ public class SmagicalTgPlugin implements Plugin {
         }
         this.configuration.init();
         this.configuration.loadFromDatabase(getDataSource());
+
+        if (this.getBot().getLoginType() == Bot.LoginType.BOT) {
+            List<CommandHandler.CommandInfo> chat = new ArrayList<>();
+            List<CommandHandler.CommandInfo> user = new ArrayList<>();
+            for (CommandHandler commandHandler : this.commandHandlers) {
+                for (CommandHandler.CommandInfo info : commandHandler.getCommandList()) {
+                    if (!testPermission(Bot.LoginType.BOT,info.getType())) continue;
+                    if (testPermission(MessageInfo.ChatType.USER,info.getPermission())){
+                        user.add(info);
+                    }
+                    if (testPermission(MessageInfo.ChatType.CHAT,info.getPermission())){
+                        chat.add(info);
+                    }
+                }
+            }
+
+        }
 
     }
 

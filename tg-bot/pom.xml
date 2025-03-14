@@ -143,13 +143,13 @@
             <version>5.5.2</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
-        <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>4.0.26</version>
-            <type>pom</type>
-        </dependency>
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.groovy/groovy-all &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.groovy</groupId>-->
+<!--            <artifactId>groovy-all</artifactId>-->
+<!--            <version>4.0.26</version>-->
+<!--            <type>pom</type>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

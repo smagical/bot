@@ -16,6 +16,9 @@ public class ChatIsTranslatableHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatIsTranslatable chatIsTranslatable = (TdApi.UpdateChatIsTranslatable) object;
         log.debug("Chat isTranslatable:\n {}", chatIsTranslatable);
         TdApi.Chat chat = getBot().getChat(chatIsTranslatable.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.isTranslatable = chatIsTranslatable.isTranslatable;
         }

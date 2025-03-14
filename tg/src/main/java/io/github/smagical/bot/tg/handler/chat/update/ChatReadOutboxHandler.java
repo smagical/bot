@@ -16,6 +16,7 @@ public class ChatReadOutboxHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatReadOutbox chatReadInbox = (TdApi.UpdateChatReadOutbox) object;
         log.debug("chatReadInbox:\n {}", chatReadInbox);
         TdApi.Chat chat = getBot().getChat(chatReadInbox.chatId);
+
         if (chat != null) {
             synchronized (chat){
                 chat.lastReadOutboxMessageId = chatReadInbox.lastReadOutboxMessageId;

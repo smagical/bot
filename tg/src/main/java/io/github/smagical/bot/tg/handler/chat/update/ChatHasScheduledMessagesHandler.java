@@ -16,6 +16,9 @@ public class ChatHasScheduledMessagesHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatHasScheduledMessages chatHasScheduledMessages = (TdApi.UpdateChatHasScheduledMessages) object;
         log.debug("Chat has scheduled messages: \n {}", chatHasScheduledMessages);
         TdApi.Chat chat = getBot().getChat(chatHasScheduledMessages.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.hasScheduledMessages = chatHasScheduledMessages.hasScheduledMessages;
         }

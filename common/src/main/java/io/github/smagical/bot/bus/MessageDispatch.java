@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+
 public class MessageDispatch {
 
     private Object object = new Object();
@@ -17,7 +18,11 @@ public class MessageDispatch {
     public void send(Event event) {
         for (Listener listener : listeners) {
             if (listener.support(event)) {
-                listener.onListener(event);
+                try {
+                    listener.onListener(event);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
                 if(!listener.next()) break;
             }
         }

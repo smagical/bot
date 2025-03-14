@@ -45,7 +45,7 @@ public class ConfigCommand implements CommandHandler{
            List<String> message = new ArrayList<>();
            Set<Integer> index = new HashSet<>();
            if (commandParam.getArgs().length == 0) {
-               for (TgBotInfo info : DbUtil.selectTgBotInfoAll(plugin.getDataSource())) {
+               for (TgBotInfo info : DbUtil.TgBotInfoDb.selectTgBotInfoAll(plugin.getDataSource())) {
                    index.add(message.size());
                    message.add(info.getAttrName());
                    message.add(": ");
@@ -54,7 +54,7 @@ public class ConfigCommand implements CommandHandler{
                    message.add("\n");
                }
            }else {
-               TgBotInfo info = DbUtil.selectTgBotInfoByName(plugin.getDataSource(),commandParam.getArgs()[0].strip().toUpperCase());
+               TgBotInfo info = DbUtil.TgBotInfoDb.selectTgBotInfoByName(plugin.getDataSource(),commandParam.getArgs()[0].strip().toUpperCase());
                  index.add(message.size());
                  message.add(info.getAttrName());
                  message.add(": ");
@@ -78,7 +78,7 @@ public class ConfigCommand implements CommandHandler{
         tgBotInfo.setAttrName(commandParam.getArgs()[0].strip().toUpperCase());
         tgBotInfo.setAttrValue(commandParam.getArgs()[1].strip());
         withSQLAndNumCatch(()->{
-            DbUtil.insertOrUpdateTgBotInfo(plugin.getDataSource(),tgBotInfo);
+            DbUtil.TgBotInfoDb.insertOrUpdateTgBotInfo(plugin.getDataSource(),tgBotInfo);
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),

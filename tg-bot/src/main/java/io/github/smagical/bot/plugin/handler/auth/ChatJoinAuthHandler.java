@@ -44,7 +44,7 @@ public class ChatJoinAuthHandler implements AuthenticationHandler{
         }
 
         try {
-            return DbUtil.exitsTgGroupByChatIdAndUserId(plugin.getDataSource(),messageInfo.getChatId());
+            return DbUtil.TgGroupDb.exitsTgGroupByChatIdAndUserId(plugin.getDataSource(),messageInfo.getChatId());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

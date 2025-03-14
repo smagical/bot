@@ -7,6 +7,7 @@ import org.redisson.api.RBucket;
 import java.time.Duration;
 
 public class RedisAuthHandler implements AuthenticationHandler{
+
     private SmagicalTgPlugin plugin;
 
     public RedisAuthHandler(SmagicalTgPlugin plugin) {

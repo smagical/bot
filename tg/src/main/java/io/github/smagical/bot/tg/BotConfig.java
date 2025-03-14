@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BotConfig {
-    private String dbBase = "tddb";
+    private String dbBase = "tddbpro";
     private AtomicInteger id = new AtomicInteger(1);
     private HashMap<String,String> idAndPath = new HashMap<>();
     private volatile static boolean flag = false;

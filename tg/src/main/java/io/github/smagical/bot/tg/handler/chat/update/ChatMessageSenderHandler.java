@@ -16,6 +16,9 @@ public class ChatMessageSenderHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatMessageSender chatMessageSender = (TdApi.UpdateChatMessageSender) object;
         log.debug("chat permissions: \n {}", chatMessageSender);
         TdApi.Chat chat = getBot().getChat(chatMessageSender.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.messageSenderId = chatMessageSender.messageSenderId;
         }

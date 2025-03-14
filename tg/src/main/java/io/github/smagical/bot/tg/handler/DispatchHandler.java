@@ -22,7 +22,8 @@ public class DispatchHandler implements HandlerWrapper {
         try {
             handlers.getOrDefault(object.getConstructor(), NoopHandler.getInstance()).onHandle(object);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage());
+            //throw new RuntimeException(e);
         }
     }
 

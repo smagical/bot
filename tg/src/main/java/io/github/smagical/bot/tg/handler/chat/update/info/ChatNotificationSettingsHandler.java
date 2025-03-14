@@ -16,6 +16,9 @@ public class ChatNotificationSettingsHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatNotificationSettings chatNotificationSettings = (TdApi.UpdateChatNotificationSettings) object;
         log.debug("Chat notification settings: \n{}", chatNotificationSettings);
         TdApi.Chat chat = getBot().getChat(chatNotificationSettings.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.notificationSettings = chatNotificationSettings.notificationSettings;
         }

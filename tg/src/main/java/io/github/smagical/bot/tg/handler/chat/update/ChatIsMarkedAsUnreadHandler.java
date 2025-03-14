@@ -16,6 +16,9 @@ public class ChatIsMarkedAsUnreadHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatIsMarkedAsUnread chatIsMarkedAsUnread = (TdApi.UpdateChatIsMarkedAsUnread) object;
         log.debug("\n{}",chatIsMarkedAsUnread);
         TdApi.Chat chat = getBot().getChat(chatIsMarkedAsUnread.chatId);
+        if (chat ==  null) {
+            return;
+        }
         synchronized (chat) {
             chat.isMarkedAsUnread = chatIsMarkedAsUnread.isMarkedAsUnread;
         }

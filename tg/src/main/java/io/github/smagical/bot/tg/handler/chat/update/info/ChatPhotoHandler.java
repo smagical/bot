@@ -16,6 +16,9 @@ public class ChatPhotoHandler extends BaseHandlerWrapper {
         TdApi.UpdateChatPhoto chatPhoto = (TdApi.UpdateChatPhoto) object;
         log.debug("chat photo: \n{}", chatPhoto);
         TdApi.Chat chat = getBot().getChat(chatPhoto.chatId);
+        if (chat == null) {
+            return;
+        }
         synchronized (chat) {
             chat.photo = chatPhoto.photo;
         }
