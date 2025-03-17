@@ -219,6 +219,24 @@ public class ClientUtils {
         return chats.getLast();
     }
 
+    public static void getUserCallBack(Client client, long userId, MessageCallBack<TdApi.User> messageCallBack) {
+        TdApi.GetUser getUser = new TdApi.GetUser(userId);
+        client.send(
+                getUser,
+                new Client.ResultHandler() {
+                    @Override
+                    public void onResult(TdApi.Object object) {
+                        if (object.getConstructor() == TdApi.User.CONSTRUCTOR) {
+                            messageCallBack.accept((TdApi.User)object);
+                        }else  if (object.getConstructor() == TdApi.Error.CONSTRUCTOR) {
+                            messageCallBack.error((TdApi.Error) object);
+                        }
+
+                    }
+                }
+        );
+    }
+
     public static void setCommand(Client client,Map<String,String> map,TdApi.BotCommandScope scope){
         TdApi.BotCommand[] commands =
                 map.entrySet().stream().map(
@@ -305,6 +323,8 @@ public class ClientUtils {
             return textEntity;
         },replyTo,replyMarkup,retryCount);
     }
+
+
 
     @FunctionalInterface
     public static interface TextEntitySupplier{

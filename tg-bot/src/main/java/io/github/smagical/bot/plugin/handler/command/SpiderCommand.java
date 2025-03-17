@@ -232,7 +232,7 @@ public class SpiderCommand implements CommandHandler{
             Long chatId = Long.parseLong(args[0]);
             TgSpider spider = DbUtil.TgSpiderDb.selectLastTgSpiderById(plugin.getDataSource(), chatId);
             if(spider == null) {
-                TdApi.Chat chat = plugin.getBot().getChat(chatId);
+                TdApi.Chat chat = plugin.getBot().getChat(chatId,true);
                 if (chat == null) {
                     ClientUtils.sendTextMessage(
                             plugin.getBot().getClient(),

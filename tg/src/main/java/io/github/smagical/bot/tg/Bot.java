@@ -100,22 +100,22 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
             this.loginType = loginType;
             this.dispatchHandler = new DispatchHandler(this);
             this.userCache = Caffeine.newBuilder()
-                    .maximumSize(1000)
+                    .maximumSize(10000)
                     .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build(key -> ClientUtils.getUser(client,key));
             this.userFullInfoCache = Caffeine.newBuilder()
-                    .maximumSize(1000)
+                    .maximumSize(10000)
                     .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
             this.chatCache = Caffeine.newBuilder()
-                    .maximumSize(1000)
+                    .maximumSize(10000)
                     .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
             this.secretCache = Caffeine.newBuilder()
-                    .maximumSize(1000)
+                    .maximumSize(10000)
                     .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
@@ -207,8 +207,14 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
         return true;
     }
 
-
     public TdApi.Chat getChat(long chatId) {
+        return getChat(chatId,false);
+    }
+
+    public TdApi.Chat getChat(long chatId,boolean netWork) {
+        if (!netWork) {
+            return chatCache.getIfPresent(chatId);
+        }
         return chatCache.get(chatId,id-> {
             try {
                 return ClientUtils.getChat(client,id);
@@ -254,6 +260,13 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
     }
 
     public TdApi.User getUser(long userId) {
+        return getUser(userId,false);
+    }
+
+    public TdApi.User getUser(long userId,boolean netWork) {
+        if (!netWork) {
+            return  userCache.getIfPresent(Long.valueOf(userId));
+        }
         return userCache.get(Long.valueOf(userId),id-> {
             try {
                 return ClientUtils.getUser(client,id);
@@ -261,6 +274,30 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
                 return null;
             }
         });
+    }
+
+    public void getUserCallBack(long userId,MessageCallBack<TdApi.User> callBack) {
+        TdApi.User user = userCache.getIfPresent(userId);
+       if (user == null) {
+           ClientUtils.getUserCallBack(
+                   getClient(),
+                   userId,
+                   new MessageCallBack<TdApi.User>() {
+                       @Override
+                       public void accept(TdApi.User user1) {
+                           userCache.put(userId, user1);
+                           callBack.accept(user1);
+                       }
+
+                       @Override
+                       public void error(TdApi.Error error) {
+                            callBack.error(error);
+                       }
+                   }
+           );
+       }else {
+           callBack.accept(user);
+       }
     }
 
     public TdApi.UserFullInfo getUserFullInfo(long id) {

@@ -11,8 +11,8 @@ import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatch;
 
 public class UserCommand implements CommandHandler{
 
-    private List<CommandInfo> commandInfoList = new ArrayList<>();
-    private SmagicalTgPlugin plugin;
+    private final List<CommandInfo> commandInfoList = new ArrayList<>();
+    private final SmagicalTgPlugin plugin;
     public UserCommand(SmagicalTgPlugin plugin) {
         this.plugin = plugin;
         CommandInfo chatList = CommandInfo.builder()
@@ -35,7 +35,7 @@ public class UserCommand implements CommandHandler{
 
     private void getUserInfo( CommandParam commandParam) {
         withSQLAndNumCatch(()->{
-            TdApi.Chat chat = plugin.getBot().getChat(commandParam.getChatId());
+            TdApi.Chat chat = plugin.getBot().getChat(commandParam.getChatId(),true);
             if (chat == null) {
                 return;
             }
@@ -64,8 +64,7 @@ public class UserCommand implements CommandHandler{
             }
 
             Map<Long,TdApi.Chat> chatMap = plugin.getBot().getAllChats();
-            List<Long> chatList = new ArrayList<>();
-            chatList.addAll(chatMap.keySet());
+            List<Long> chatList = new ArrayList<>(chatMap.keySet());
             chatList.sort(Long::compareTo);
             List<String> message = new ArrayList<>();
             Set<Integer> index = new HashSet<>();

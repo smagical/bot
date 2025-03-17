@@ -6,6 +6,7 @@ import io.github.smagical.bot.plugin.datasource.cache.CacheManger;
 import io.github.smagical.bot.plugin.datasource.model.TgGroup;
 import io.github.smagical.bot.plugin.util.DbUtil;
 import io.github.smagical.bot.plugin.util.ParamsUtils;
+import io.github.smagical.bot.tg.model.MessageCallBack;
 import io.github.smagical.bot.tg.util.ClientUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.TdApi;
@@ -171,7 +172,7 @@ public class ChatCommand implements CommandHandler{
                     DbUtil.TgGroupDb.selectTgGroupByUserId(plugin.getDataSource(),userId);
             List<TdApi.Chat> chats =
                     list.stream()
-                            .map(e->plugin.getBot().getChat(e.getChatId()))
+                            .map(e->plugin.getBot().getChat(e.getChatId(),true))
                             .filter(Objects::nonNull)
                             .toList();
             List<String> chatNames = new ArrayList<>();
@@ -201,32 +202,52 @@ public class ChatCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args,1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            List<TgGroup> list =
+            final List<TgGroup> list =
                     DbUtil.TgGroupDb.selectTgGroupByChatId(plugin.getDataSource(),chatId);
-            List<TdApi.User> users =
-                    list.stream()
-                            .map(e->plugin.getBot().getUser(e.getInviteUserId()))
-                            .filter(Objects::nonNull)
-                            .toList();
-            List<String> userNames = new ArrayList<>();
-            Set<Integer> codeIndex = new HashSet<>();
-            for (TdApi.User user : users) {
-                userNames.add(String.format("%s %s",user.firstName,user.lastName));
-                userNames.add(": ");
-                codeIndex.add(userNames.size());
-                userNames.add(String.valueOf(user.id));
-                userNames.add("\n");
-            }
-            if (userNames.isEmpty()){
-                userNames.add("0/0");
-            }
-            ClientUtils.sendTextByCodeType(
-                    plugin.getBot().getClient(),
-                    commandParam.getChatId(),
-                    userNames.toArray(new String[userNames.size()]),
-                    codeIndex,
-                    null
+            plugin.getBot().getUserCallBack(
+                    list.removeFirst().getInviteUserId(),
+                    new MessageCallBack<TdApi.User>() {
+                        private final  List<TdApi.User> users = new ArrayList<>();
+                        @Override
+                        public void accept(TdApi.User message) {
+                            users.add(message);
+                            next();
+                        }
+
+                        @Override
+                        public void error(TdApi.Error error) {
+                            next();
+                        }
+                        private void next(){
+                            if (list.isEmpty()) {
+                                List<String> userNames = new ArrayList<>();
+                                Set<Integer> codeIndex = new HashSet<>();
+                                for (TdApi.User user : users) {
+                                    userNames.add(String.format("%s %s",user.firstName,user.lastName));
+                                    userNames.add(": ");
+                                    codeIndex.add(userNames.size());
+                                    userNames.add(String.valueOf(user.id));
+                                    userNames.add("\n");
+                                }
+                                if (userNames.isEmpty()){
+                                    userNames.add("0/0");
+                                }
+                                ClientUtils.sendTextByCodeType(
+                                        plugin.getBot().getClient(),
+                                        commandParam.getChatId(),
+                                        userNames.toArray(new String[userNames.size()]),
+                                        codeIndex,
+                                        null
+                                );
+                            }
+                            plugin.getBot().getUserCallBack(
+                                    list.removeFirst().getInviteUserId(),
+                                    this
+                            );
+                        }
+                    }
             );
+
         },plugin.getBot().getClient(),commandParam.getChatId(),"user list by chat");
     }
 
@@ -261,7 +282,7 @@ public class ChatCommand implements CommandHandler{
                 cache.remove(args[0]);
                 final Long userIdTmp = userId;
                 withSQLAndNumCatch(()->{
-                    TdApi.Chat chat = plugin.getBot().getChat(commandParam.getChatId());
+                    TdApi.Chat chat = plugin.getBot().getChat(commandParam.getChatId(),true);
                     TgGroup tgGroup = TgGroup
                             .builder()
                             .chatId(commandParam.getChatId())
@@ -322,7 +343,7 @@ public class ChatCommand implements CommandHandler{
         ParamsUtils.CheckParamsByLen(args, 1);
         withSQLAndNumCatch(()->{
             Long chatId = Long.parseLong(args[0]);
-            TdApi.Chat chat = plugin.getBot().getChat(chatId);
+            TdApi.Chat chat = plugin.getBot().getChat(chatId,true);
 
             if ( chat == null){
                 ClientUtils.sendTextMessage(

@@ -99,7 +99,7 @@ public class SmagicalTgPlugin implements Plugin {
 
             if (messageInfo.isSenderIsBot()) return;
 
-            TdApi.Chat chat = bot.getChat(message.chatId);
+            TdApi.Chat chat = bot.getChat(message.chatId,true);
             if (chat == null) return;
             if (chat.type.getConstructor() == TdApi.ChatTypePrivate.CONSTRUCTOR) {
                 messageInfo.setChatType(MessageInfo.ChatType.USER);
@@ -116,7 +116,8 @@ public class SmagicalTgPlugin implements Plugin {
             if (message.senderId.getConstructor() == TdApi.MessageSenderUser.CONSTRUCTOR){
                 long userId = ((TdApi.MessageSenderUser)message.senderId).userId;
                 messageInfo.setUserId(userId);
-                TdApi.User user = bot.getUser(userId);
+                //todo 待修改 这里等待五秒...多了卡死
+                TdApi.User user = bot.getUser(userId,true);
                 if (user == null || user.type.getConstructor() == TdApi.UserTypeBot.CONSTRUCTOR) {
                     messageInfo.setSenderIsBot(true);
                     return;
