@@ -7,6 +7,8 @@ import org.drinkless.tdlib.TdApi;
 
 import java.util.*;
 
+import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatch;
+
 public class UserCommand implements CommandHandler{
 
     private List<CommandInfo> commandInfoList = new ArrayList<>();

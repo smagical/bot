@@ -19,7 +19,7 @@ import java.util.List;
 public class TgMessage {
     private Long id;
     private Long chatId;
-    private Long ablum;
+    private Long album;
     private String message;
     private String link;
 
@@ -30,7 +30,7 @@ public class TgMessage {
             TgMessage messages =  new TgMessage();
             messages.setId(resultSet.getLong("id"));
             messages.setChatId(resultSet.getLong("chat_id"));
-            messages.setAblum(resultSet.getLong("album"));
+            messages.setAlbum(resultSet.getLong("album"));
             messages.setMessage(resultSet.getString("message"));
             messages.setLink(resultSet.getString("link"));
             tgMessages.add(messages);
@@ -44,7 +44,7 @@ public class TgMessage {
             TgMessage messages =  new TgMessage();
             messages.setId(resultSet.getLong("id"));
             messages.setChatId(resultSet.getLong("chat_id"));
-            messages.setAblum(resultSet.getLong("ablum"));
+            messages.setAlbum(resultSet.getLong("album"));
             messages.setMessage(resultSet.getString("message"));
             messages.setLink(resultSet.getString("link"));
             return  messages;

@@ -2,6 +2,7 @@ package io.github.smagical.bot.plugin.handler.auth;
 
 import io.github.smagical.bot.plugin.MessageInfo;
 import io.github.smagical.bot.plugin.SmagicalTgPlugin;
+import io.github.smagical.bot.tg.Bot;
 import org.redisson.api.RBucket;
 
 import java.time.Duration;
@@ -26,7 +27,8 @@ public class RedisAuthHandler implements AuthenticationHandler{
                 return true;
             }
         }
-        String uuid = "tg_bot:auth:"+messageInfo.getChatId()+":"+ messageInfo.getMessageId();
+        String type = plugin.getBot().getLoginType() == Bot.LoginType.BOT?"bot":"user";
+        String uuid = "tg_bot:auth:"+type+":"+messageInfo.getChatId()+":"+ messageInfo.getMessageId();
         RBucket<String> rBuckets =  plugin.getRedissonClient().getBucket(uuid);
          if (rBuckets.setIfAbsent(plugin.getConfiguration().getInstanceId(), Duration.ofSeconds(30))){
              return  true;

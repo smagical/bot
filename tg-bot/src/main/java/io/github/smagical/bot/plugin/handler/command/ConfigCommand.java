@@ -8,6 +8,8 @@ import io.github.smagical.bot.tg.util.ClientUtils;
 
 import java.util.*;
 
+import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatch;
+
 public class ConfigCommand implements CommandHandler{
     private List<CommandInfo> commandInfoList = new ArrayList<>();
     private SmagicalTgPlugin plugin;

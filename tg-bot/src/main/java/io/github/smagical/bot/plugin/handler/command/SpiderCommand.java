@@ -8,15 +8,27 @@ import io.github.smagical.bot.plugin.handler.PageHelper;
 import io.github.smagical.bot.plugin.util.DbUtil;
 import io.github.smagical.bot.plugin.util.ParamsUtils;
 import io.github.smagical.bot.plugin.util.SegUtil;
+import io.github.smagical.bot.tg.model.MessageCallBack;
 import io.github.smagical.bot.tg.util.ClientUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.TdApi;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static io.github.smagical.bot.tg.util.Utils.withException;
+import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatch;
+
+
+@Slf4j
 public class SpiderCommand implements CommandHandler{
 
     private List<CommandInfo> commandInfoList = new ArrayList<>();
@@ -25,7 +37,7 @@ public class SpiderCommand implements CommandHandler{
             Runtime.getRuntime().availableProcessors()>3?
                     Runtime.getRuntime().availableProcessors()/3*2 : 1
     );
-    private ExecutorService getLinkExecutor = Executors.newFixedThreadPool(
+    private ExecutorService linkedexecutor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors()>3?
                     Runtime.getRuntime().availableProcessors()/3*2 : 1
     );
@@ -40,6 +52,7 @@ public class SpiderCommand implements CommandHandler{
                     .description("/spider_list [spider list]")
                     .function(this::spiderList)
                     .build();
+
             CommandInfo spiderChat = CommandInfo.builder()
                     .cmd("/spider_chat")
                     .type(CommandType.USER)
@@ -282,160 +295,199 @@ public class SpiderCommand implements CommandHandler{
         },plugin.getBot().getClient(),commandParam.getChatId(),"spider_list");
     }
 
-    private void spider(CommandParam commandParam,TgSpider spider) throws InterruptedException, SQLException, IOException {
-            Long last_id = 0l;
-            long spider_last = 0l;
-            long space_num = 0l;
-            long nums = 0l;
-            long SEND_MESSAGE = 1000l;
-            long send_message = SEND_MESSAGE;
-            boolean updateSpiderLast = false;
 
+
+    private void spider(CommandParam commandParam,TgSpider spider) throws InterruptedException, SQLException, IOException {
             ClientUtils.sendTextMessage(
                     plugin.getBot().getClient(),
                     commandParam.getChatId(),
                     String.format(" spider %s:%s start", spider.getChatName(),spider.getChatId())
             );
 
-            while (true){
-                Collection<TdApi.Message> messageCollections =   ClientUtils.getChatHistory(
-                        plugin.getBot().getClient(),
-                        spider.getChatId(),
-                        spider_last,
-                        200
-                );
+            plugin.getBot().getChatCallBack(
+                    spider.getChatId(),
+                    new MessageCallBack<TdApi.Chat>() {
+                        @Override
+                        public void accept(TdApi.Chat message) {
+                            withException(()->{
+                                final AtomicLong  spiderLast = new AtomicLong(0);
+                                final int SEND_MESSAGE_TOTAL = 1000;
+                                final AtomicInteger sendCount = new AtomicInteger(0);
+                                ClientUtils.getChatHistoryCallBack(
+                                        plugin.getBot().getClient(),
+                                        spider.getChatId(),
+                                        spiderLast.get(),
+                                        new MessageCallBack<TdApi.Message[]>() {
+                                            private  int spiderRetryCount = 3;
+                                            private  long waitSpiderLast = 0;
+                                            private AtomicInteger total = new AtomicInteger(0);
+                                            @Override
+                                            public void accept(TdApi.Message[] messages) {
+                                                log.info("{} messages {}",spider.getChatName(),messages.length);
+                                                messages = Arrays.stream(messages).filter(message -> message.id != spiderLast.get()).toArray(TdApi.Message[]::new);
+                                                if (messages.length == 0){
+                                                    if (-- spiderRetryCount <=0 ) {
+                                                        if (spider.getLastSpiderId() == 0){
+                                                            spider.setLastSpiderId(waitSpiderLast);
+                                                            withException(()->{
+                                                                DbUtil.TgSpiderDb.updateTgSpider(
+                                                                        plugin.getDataSource(),
+                                                                        spider
+                                                                );
+                                                                ClientUtils.sendTextMessage(
+                                                                        plugin.getBot().getClient(),
+                                                                        commandParam.getChatId(),
+                                                                        String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),total.get())
+                                                                );
+                                                            });
+
+                                                        }
+                                                        return;
+                                                    }
+                                                    withException(()->{
+                                                        ClientUtils.getChatHistoryCallBack(
+                                                                plugin.getBot().getClient(),
+                                                                spider.getChatId(),
+                                                                spiderLast.get(),
+                                                                this
+                                                        );
+                                                    });
+                                                }
+
+                                                boolean updateSpiderLast = false;
+                                                List<TgMessage> messagesList =  new ArrayList<>();
+                                                for (TdApi.Message message : messages) {
+                                                    waitSpiderLast=Math.max(waitSpiderLast,message.id);
+                                                    if (spiderLast.get() == 0) spiderLast.set(message.id);
+                                                    else spiderLast.set(Math.min(spiderLast.get(),message.id));
+                                                    TgMessage tgMessage = new TgMessage();
+                                                    tgMessage.setChatId(message.chatId);
+                                                    tgMessage.setId(message.id);
+                                                    tgMessage.setAlbum(message.mediaAlbumId);
+
+                                                    if (message.content.getConstructor() == TdApi.MessageText.CONSTRUCTOR){
+                                                        tgMessage.setMessage(
+                                                                ((TdApi.MessageText)message.content).text.text
+                                                        );
+                                                    }else if (message.content.getConstructor() == TdApi.MessageVideo.CONSTRUCTOR){
+                                                        TdApi.MessageVideo video = (TdApi.MessageVideo)message.content;
+                                                        tgMessage.setMessage(video.caption.text);
+                                                    }else if (message.content.getConstructor() == TdApi.MessagePhoto.CONSTRUCTOR){
+                                                        TdApi.MessagePhoto photo = (TdApi.MessagePhoto)message.content;
+                                                        tgMessage.setMessage(photo.caption.text);
+                                                    }
+
+                                                    if (message.id < spider.getLastSpiderId()) {
+                                                        updateSpiderLast = true;
+                                                        break;
+                                                    }
+                                                    if (tgMessage.getMessage() == null || tgMessage.getMessage().isBlank()) {
+                                                        continue;
+                                                    }
+
+                                                    if (filter.filter(tgMessage.getMessage())) {
+                                                        continue;
+                                                    }
+
+                                                    messagesList.add(tgMessage);
 
 
-                if (messageCollections.isEmpty()) {
-                    space_num++;
-                    if (space_num >= 3){
-                        spider.setLastSpiderId(last_id);
-                        DbUtil.TgSpiderDb.updateTgSpider(
-                                plugin.getDataSource(),
-                                spider
-                        );
-                        ClientUtils.sendTextMessage(
-                                plugin.getBot().getClient(),
-                                commandParam.getChatId(),
-                                String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),nums)
-                        );
-                        return;
-                    }
+                                                }
+                                                log.info("{} ad filter messages {}",spider.getChatName(),messagesList.size());
+                                                for (final TgMessage tgMessage : messagesList) {
+                                                    linkedexecutor.submit(()->{
+                                                        withException(()->{
+                                                            if (DbUtil.TgMessageDb.exitsTgMessage(plugin.getDataSource(), tgMessage.getId(),tgMessage.getChatId())){
+                                                                return;
+                                                            }
 
-                    continue;
-                }
+                                                            ClientUtils.getMessageLinkCallBack(
+                                                                    plugin.getBot().getClient(),
+                                                                    tgMessage.getChatId(),
+                                                                    tgMessage.getId(),
+                                                                    new MessageCallBack<TdApi.MessageLink>() {
+                                                                        @Override
+                                                                        public void accept(TdApi.MessageLink messageLink) {
+                                                                            String link = messageLink.link;
+                                                                            tgMessage.setLink(link);
+                                                                            withException(()->{
+                                                                                DbUtil.TgMessageDb.insertTgMessage(
+                                                                                        plugin.getDataSource(),
+                                                                                        List.of(tgMessage)
+                                                                                );
+                                                                                log.debug("save {} {}  total: {}",spider.getChatName(),tgMessage,total.incrementAndGet());
+                                                                                int num = total.get() / SEND_MESSAGE_TOTAL;
+                                                                                if (num > sendCount.get() && sendCount.compareAndSet(num-1,num)){
+                                                                                    ClientUtils.sendTextMessage(
+                                                                                            plugin.getBot().getClient(),
+                                                                                            commandParam.getChatId(),
+                                                                                            String.format(" spider %s:%s total:%s", spider.getChatName(),spider.getChatId(),total.get())
+                                                                                    );
+                                                                                }
+                                                                            });
+                                                                        }
 
-                List<TgMessage> messages =  new ArrayList<>();
-                synchronized (messageCollections) {
-                    for (TdApi.Message message : messageCollections) {
+                                                                        @Override
+                                                                        public void error(TdApi.Error error) {
+                                                                            log.debug("get link {} {} error: {}",spider.getChatName(),tgMessage,error);
+                                                                        }
+                                                                    }
+                                                            );
+                                                        });
+                                                    });
+                                                }
 
-                        last_id = Math.max(last_id,message.id);
-                        if (spider_last == 0) spider_last = message.id;
-                        else spider_last =  Math.min(spider_last,message.id);
-                        TgMessage tgMessage = new TgMessage();
-                        tgMessage.setChatId(message.chatId);
-                        tgMessage.setId(message.id);
-                        tgMessage.setAblum(message.mediaAlbumId);
+                                                if (updateSpiderLast) {
+                                                    spider.setLastSpiderId(waitSpiderLast);
+                                                    withException(()->{
+                                                        DbUtil.TgSpiderDb.updateTgSpider(
+                                                                plugin.getDataSource(),
+                                                                spider
+                                                        );
+                                                        ClientUtils.sendTextMessage(
+                                                                plugin.getBot().getClient(),
+                                                                commandParam.getChatId(),
+                                                                String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),total.get())
+                                                        );
+                                                    });
 
-                        if (message.content.getConstructor() == TdApi.MessageText.CONSTRUCTOR){
-                            tgMessage.setMessage(
-                                    ((TdApi.MessageText)message.content).text.text
-                            );
-                        }else if (message.content.getConstructor() == TdApi.MessageVideo.CONSTRUCTOR){
-                            TdApi.MessageVideo video = (TdApi.MessageVideo)message.content;
-                            tgMessage.setMessage(video.caption.text);
-                        }else if (message.content.getConstructor() == TdApi.MessagePhoto.CONSTRUCTOR){
-                            TdApi.MessagePhoto photo = (TdApi.MessagePhoto)message.content;
-                            tgMessage.setMessage(photo.caption.text);
-                        }
+                                                }else {
+                                                    withException(()->{
+                                                        ClientUtils.getChatHistoryCallBack(
+                                                                plugin.getBot().getClient(),
+                                                                spider.getChatId(),
+                                                                spiderLast.get(),
+                                                                this
+                                                        );
+                                                    });
+                                                }
+                                            }
 
-                        try {
-                            if (message.id < spider.getLastSpiderId()) {
-                                updateSpiderLast = true;
-                                break;
-                            }
-                            if (tgMessage.getMessage() == null || tgMessage.getMessage().isBlank()){
-                                continue;
-                            }
-
-                            if (filter.filter(tgMessage.getMessage())) {
-                                continue;
-                            }
-
-                            messages.add(tgMessage);
-                        }catch (Exception e){
-
-                        }
-
-                    }
-                }
-
-
-                CountDownLatch latch = new CountDownLatch(messages.size());
-                for (final TgMessage tgMessage : messages) {
-                    getLinkExecutor.submit(
-                            ()->{
-                                try {
-                                    if (DbUtil.TgMessageDb.exitsTgMessage(plugin.getDataSource(), tgMessage.getId(),tgMessage.getChatId())){
-                                        return;
-                                    }
-                                    int count = 0;
-                                    while ((tgMessage.getLink() == null || tgMessage.getLink().isBlank()) && count++ < 2){
-                                        try {
-                                            tgMessage.setLink(ClientUtils.getMessageLink(
-                                                    plugin.getBot().getClient(),
-                                                    tgMessage.getChatId(),
-                                                    tgMessage.getId()
-                                            ));
-                                        } catch (InterruptedException e) {
-
+                                            @Override
+                                            public void error(TdApi.Error error) {
+                                                log.debug("{} {} {}",spider.getChatName(),spider.getChatId(),error);
+                                            }
                                         }
-                                    }
-                                } catch (SQLException e) {
 
-                                }finally {
-                                    latch.countDown();
-                                }
+                                );
+                            });
+                        }
 
-                            }
-                    );
-                }
-                latch.await();
-                messages = messages.stream().filter(e->e.getLink()!=null).collect(Collectors.toList());
-                if (updateSpiderLast) {
-                    DbUtil.TgMessageDb.insertTgMessage(plugin.getDataSource(),messages);
-                    messages.clear();
-                    spider.setLastSpiderId(last_id);
-                    DbUtil.TgSpiderDb.updateTgSpider(
-                            plugin.getDataSource(),
-                            spider
-                    );
-                    ClientUtils.sendTextMessage(
-                            plugin.getBot().getClient(),
-                            commandParam.getChatId(),
-                            String.format(" spider %s:%s total:%s end", spider.getChatName(),spider.getChatId(),nums)
-                    );
-                    return;
-                }
-                if (messages.isEmpty()) continue;
-
-                DbUtil.TgMessageDb.insertTgMessage(plugin.getDataSource(),messages.stream().filter(e->e.getLink()!=null).collect(Collectors.toList()));
-                nums+=messages.size();
-                send_message-=messages.size();
-                messages.clear();
-
-                if (send_message < 0){
-                    ClientUtils.sendTextMessage(
-                            plugin.getBot().getClient(),
-                            commandParam.getChatId(),
-                            String.format(" spider %s:%s nums %s", spider.getChatName(),spider.getChatId(),nums)
-                    );
-                    send_message = SEND_MESSAGE;
-                }
-            }
-
+                        @Override
+                        public void error(TdApi.Error error) {
+                            ClientUtils.sendTextMessage(
+                                    plugin.getBot().getClient(),
+                                    commandParam.getChatId(),
+                                    String.format(" spider %s not found", spider.getChatId())
+                            );
+                        }
+                    }
+            );
 
     }
+
+
+
 
 
     @Override

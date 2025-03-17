@@ -23,7 +23,7 @@ public abstract class CacheManger {
 
         @Override
         public void put(K key, V value) {
-            this.put(key, value);
+            this.cache.put(key, value);
         }
 
         @Override

@@ -1,9 +1,11 @@
 package io.github.smagical.bot.tg.util;
 
+import io.github.smagical.bot.tg.model.MessageCallBack;
 import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -12,10 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class ClientUtils {
-    public final static int LIMIT = 50;
-    public final static int RETRY = 5;
-    public final static long WAITE_TIME = 1 * 1000;
+    public final static int LIMIT =100;
+    public final static int RETRY = 2;
+    public final static long WAITE_TIME = 5 * 1000;
     public final static String END= "\u200c";
+
+
+
 
     public static Collection<TdApi.Message> getChatHistory(
             Client client,Long chatId,long lastMessageId,int limit
@@ -52,14 +57,12 @@ public class ClientUtils {
                                 case TdApi.Messages.CONSTRUCTOR : {
                                     TdApi.Messages messages = (TdApi.Messages)object;
                                     TdApi.Message[] messagesArray = messages.messages;
-                                    synchronized (res){
-                                        for (int i = 0; i < messagesArray.length; i++) {
-                                            if (dist.contains(messagesArray[i].id)) {
-                                                continue;
-                                            }
-                                            res.add(messagesArray[i]);
-                                            dist.add(messagesArray[i].id);
+                                    for (int i = 0; i < messagesArray.length; i++) {
+                                        if (dist.contains(messagesArray[i].id)) {
+                                            continue;
                                         }
+                                        res.add(messagesArray[i]);
+                                        dist.add(messagesArray[i].id);
                                     }
                                     if (res.size() >= limit) {
                                         flag.set(false);
@@ -73,15 +76,48 @@ public class ClientUtils {
             );
             if (!res.isEmpty())
                 lastMessageId = res.peek().id;
-            latch.await(WAITE_TIME, TimeUnit.MILLISECONDS);
+            latch.await(WAITE_TIME , TimeUnit.MILLISECONDS);
             if (res.size() == lastCount){
                 count.decrementAndGet();
             }else {
                 count.set(RETRY);
             }
+            Thread.sleep(Duration.ofSeconds(1).toMillis());
         }
         while (res.size() > limit) res.poll();
-        return res;
+
+        return res.stream().toList();
+    }
+
+
+    public static void getChatHistoryCallBack(
+            Client client, Long chatId, long lastMessageId, MessageCallBack<TdApi.Message[]> consumer
+    ) throws InterruptedException {
+
+        TdApi.GetChatHistory getChatHistory = new TdApi.GetChatHistory(
+                chatId,lastMessageId,0,LIMIT,false
+        );
+        client.send(
+                getChatHistory,
+                new Client.ResultHandler() {
+                    @Override
+                    public void onResult(TdApi.Object object) {
+
+                        switch (object.getConstructor()){
+                            case TdApi.Error.CONSTRUCTOR : {
+                                consumer.error((TdApi.Error) object);
+                                break;
+                            }
+                            case TdApi.Messages.CONSTRUCTOR : {
+                                TdApi.Messages messages = (TdApi.Messages)object;
+                                consumer.accept(messages.messages);
+                                break;
+                            }
+                        }
+                    }
+                }
+        );
+
     }
 
     public static String getMessageLink(Client client,Long chatId,Long messageId) throws InterruptedException {
@@ -100,8 +136,27 @@ public class ClientUtils {
                 latch.countDown();
             }
         });
-        latch.await(WAITE_TIME * 5, TimeUnit.MILLISECONDS);
+        latch.await(WAITE_TIME, TimeUnit.MILLISECONDS);
         return result.length() == 0 ? null : result.toString();
+    }
+
+    public static void getMessageLinkCallBack(Client client, Long chatId, Long messageId, MessageCallBack<TdApi.MessageLink> consumer) throws InterruptedException {
+
+        TdApi.GetMessageLink getMessageLink = new TdApi.GetMessageLink(
+                chatId,messageId,0,true,false
+        );
+
+        client.send(getMessageLink, new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.Object object) {
+                if (object.getConstructor() == TdApi.MessageLink.CONSTRUCTOR) {
+                    consumer.accept((TdApi.MessageLink)object);
+                }else if (object.getConstructor() == TdApi.Error.CONSTRUCTOR) {
+                    consumer.error((TdApi.Error) object);
+                }
+            }
+        });
+
     }
 
     public static TdApi.Chat getChat(Client client,Long chatId) throws InterruptedException {
@@ -125,6 +180,24 @@ public class ClientUtils {
         return chats.getLast();
     }
 
+    public static void getChatCallBack(Client client,Long chatId,MessageCallBack<TdApi.Chat> callBack) throws InterruptedException {
+        TdApi.GetChat getChat = new TdApi.GetChat(chatId);
+        client.send(
+                getChat,
+                new Client.ResultHandler() {
+                    @Override
+                    public void onResult(TdApi.Object object) {
+                        if (object.getConstructor() == TdApi.Chat.CONSTRUCTOR) {
+                            callBack.accept((TdApi.Chat) object);
+                        }else if (object.getConstructor() == TdApi.Error.CONSTRUCTOR) {
+                            callBack.error((TdApi.Error) object);
+                        }
+                    }
+                }
+        );
+
+    }
+
     public static TdApi.User getUser(Client client, long userId) throws InterruptedException {
         TdApi.GetUser getUser = new TdApi.GetUser(userId);
         CountDownLatch latch = new CountDownLatch(1);
@@ -146,7 +219,7 @@ public class ClientUtils {
         return chats.getLast();
     }
 
-    public static void setCommand(Client client,HashMap<String,String> map,TdApi.BotCommandScope scope){
+    public static void setCommand(Client client,Map<String,String> map,TdApi.BotCommandScope scope){
         TdApi.BotCommand[] commands =
                 map.entrySet().stream().map(
                         e->new TdApi.BotCommand(e.getKey(),e.getValue())
@@ -210,15 +283,15 @@ public class ClientUtils {
         }, replyTo, replyMarkup, retryCount);
     }
 
-    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, TdApi.InputMessageReplyTo replyTo){
+    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, org.drinkless.tdlib.TdApi.InputMessageReplyTo replyTo){
         sendTextByCodeType(client,chatId,messages,codeIndex,replyTo,null,RETRY);
     }
 
-    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, TdApi.InputMessageReplyTo replyTo,int  retryCount){
+    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, org.drinkless.tdlib.TdApi.InputMessageReplyTo replyTo,int  retryCount){
         sendTextByCodeType(client,chatId,messages,codeIndex,replyTo,null,retryCount);
     }
 
-    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, TdApi.InputMessageReplyTo replyTo, TdApi.ReplyMarkup replyMarkup){
+    public static void sendTextByCodeType(Client client, Long chatId, String[] messages, Set<Integer> codeIndex, org.drinkless.tdlib.TdApi.InputMessageReplyTo replyTo, TdApi.ReplyMarkup replyMarkup){
         sendTextByCodeType(client,chatId,messages,codeIndex,replyTo,replyMarkup,RETRY);
     }
 

@@ -102,7 +102,7 @@ public class ChatLoadListener implements Listener<ChatLoadListener.LoadChatEvent
         else
             for (LoadChatEvent.ChatType type : LoadChatEvent.ChatType.values()) {
                 if (type != LoadChatEvent.ChatType.ALL)
-                    new Handler(bot,event.getData().getData()).handle(null);
+                    new Handler(bot,type).handle(null);
             }
     }
 

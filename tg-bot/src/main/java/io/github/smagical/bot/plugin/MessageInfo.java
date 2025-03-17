@@ -90,4 +90,19 @@ public class MessageInfo {
     public void setSenderIsBot(boolean senderIsBot) {
         this.senderIsBot = senderIsBot;
     }
+
+
+    @Override
+    public String toString() {
+        return "MessageInfo{" +
+                "messageId=" + messageId +
+                ", messageText='" + messageText + '\'' +
+                ", chatId=" + chatId +
+                ", userId=" + userId +
+                ", isCommand=" + isCommand +
+                ", senderIsBot=" + senderIsBot +
+                ", chatType=" + chatType +
+                ", TgLoginForBot=" + TgLoginForBot +
+                '}';
+    }
 }

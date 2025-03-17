@@ -19,8 +19,10 @@ import io.github.smagical.bot.tg.listener.user.UserListener;
 import io.github.smagical.bot.tg.listener.user.authorization.state.AuthorizationStateListener;
 import io.github.smagical.bot.tg.listener.user.chat.LoginForChatInitListener;
 import io.github.smagical.bot.tg.listener.user.chat.message.MessageDispatchListener;
+import io.github.smagical.bot.tg.model.MessageCallBack;
 import io.github.smagical.bot.tg.model.PluginEntity;
 import io.github.smagical.bot.tg.util.ClientUtils;
+import io.github.smagical.bot.tg.util.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
@@ -99,22 +101,22 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
             this.dispatchHandler = new DispatchHandler(this);
             this.userCache = Caffeine.newBuilder()
                     .maximumSize(1000)
-                    .expireAfterAccess(Duration.ofHours(1))
+                    .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build(key -> ClientUtils.getUser(client,key));
             this.userFullInfoCache = Caffeine.newBuilder()
                     .maximumSize(1000)
-                    .expireAfterAccess(Duration.ofHours(1))
+                    .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
             this.chatCache = Caffeine.newBuilder()
                     .maximumSize(1000)
-                    .expireAfterAccess(Duration.ofHours(1))
+                    .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
             this.secretCache = Caffeine.newBuilder()
                     .maximumSize(1000)
-                    .expireAfterAccess(Duration.ofHours(1))
+                    .expireAfterAccess(Duration.ofDays(365))
                     .softValues()
                     .build();
 
@@ -214,6 +216,28 @@ public class Bot extends MessageDispatch implements io.github.smagical.bot.Bot {
                 return null;
             }
         });
+    }
+
+    public void getChatCallBack(long chatId, MessageCallBack<TdApi.Chat>  consumer) {
+        TdApi.Chat chat = chatCache.getIfPresent(chatId);
+        if (chat == null){
+            Utils.withException(()->{
+                ClientUtils.getChatCallBack(this.getClient(), chatId, new MessageCallBack<TdApi.Chat>() {
+                    @Override
+                    public void accept(TdApi.Chat message) {
+                        chatCache.put(chatId, message);
+                        consumer.accept(message);
+                    }
+
+                    @Override
+                    public void error(TdApi.Error error) {
+                        consumer.error(error);
+                    }
+                });
+            });
+        }else {
+            consumer.accept(chat);
+        }
     }
 
     public TdApi.SecretChat getSecretChat(long id) {

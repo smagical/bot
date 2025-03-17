@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -58,36 +59,49 @@ public class DbUtil {
         public static int insertTgMessage(DataSource dataSource, List<TgMessage> messages) throws IOException, SQLException {
             int success = 0;
             try (Connection connection = dataSource.getConnection()) {
-                connection.setAutoCommit(false);
-                for (TgMessage tgMessage : messages) {
-                    try {
-                        PreparedStatement preparedStatement = connection.prepareStatement(INSERT_TG_MESSAGE_SQL);
-                        preparedStatement.setLong(1, tgMessage.getId());
-                        preparedStatement.setLong(2, tgMessage.getChatId());
-                        preparedStatement.setLong(3,tgMessage.getAblum());
-                        preparedStatement.setString(4, tgMessage.getMessage());
-                        preparedStatement.setString(5,tgMessage.getLink());
-                        preparedStatement.setString(6,
-                                SegUtil.concat(SegUtil.seqByHanLP(repaceAll(tgMessage.getMessage()))," "));
-                        if (tgMessage.getMessage().isBlank()) continue;
-                        preparedStatement.execute();
-                        preparedStatement.close();
+                PreparedStatement preparedStatement = connection.prepareStatement(INSERT_TG_MESSAGE_SQL);
+                try {
+                    for (TgMessage tgMessage : messages) {
+                        try {
 
-                        preparedStatement = connection.prepareStatement(UPDATE_TG_MESSAGE_OTHER_SQL);
-                        preparedStatement.setString(1,SegUtil.concat(SegUtil.seqByAll(tgMessage.getMessage())," "));
-                        preparedStatement.setLong(2, tgMessage.getId());
-                        preparedStatement.setLong(3,tgMessage.getChatId());
-                        preparedStatement.execute();
-                        connection.commit();
-                        success++;
-                    }catch (Exception e){
-                        log.error(e.getMessage());
-                        e.printStackTrace();
-                        connection.rollback();
+                            preparedStatement.setLong(1, tgMessage.getId());
+                            preparedStatement.setLong(2, tgMessage.getChatId());
+                            preparedStatement.setLong(3,tgMessage.getAlbum());
+                            preparedStatement.setString(4, tgMessage.getMessage());
+                            preparedStatement.setString(5,tgMessage.getLink());
+                            preparedStatement.setString(6,
+                                    SegUtil.concat(SegUtil.seqByHanLP(repaceAll(tgMessage.getMessage()))," "));
+                            if (tgMessage.getMessage().isBlank()) continue;
+                            preparedStatement.addBatch();
+                        }catch (Exception e){
+                            log.error(e.getMessage());
+                            e.printStackTrace();
+                            connection.rollback();
+                        }
                     }
+                    success = (int) Arrays.stream(preparedStatement.executeBatch()).filter(e->e>0).count();
+                    preparedStatement = connection.prepareStatement(UPDATE_TG_MESSAGE_OTHER_SQL);
+                    for (TgMessage tgMessage : messages) {
+                        try {
+                            preparedStatement.setString(1,SegUtil.concat(SegUtil.seqByAll(repaceAll(tgMessage.getMessage()))," "));
+                            preparedStatement.setLong(2, tgMessage.getId());
+                            preparedStatement.setLong(3,tgMessage.getChatId());
+                            preparedStatement.execute();
+
+                        }catch (Exception e){
+                            log.error(e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                    success = (int) Math.min(Arrays.stream(preparedStatement.executeBatch()).filter(e->e>0).count(),success);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                connection.setAutoCommit(true);
+
+
             }
+
             return success;
         }
 

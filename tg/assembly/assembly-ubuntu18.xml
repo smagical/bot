@@ -51,7 +51,7 @@
             <outputDirectory>data</outputDirectory>
             <excludes>
                 <exclude>model/**</exclude>
-                <exclude>**/*.txt</exclude>
+<!--                <exclude>**/*.txt</exclude>-->
             </excludes>
         </fileSet>
 <!--        <fileSet>-->

@@ -16,6 +16,7 @@ import io.github.smagical.bot.tg.handler.chat.update.bot.NewCallbackQueryHandler
 import io.github.smagical.bot.tg.handler.chat.update.message.NewMessageHandler;
 import io.github.smagical.bot.tg.model.Plugin;
 import io.github.smagical.bot.tg.util.ClientUtils;
+import io.github.smagical.bot.tg.util.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.TdApi;
 import org.redisson.Redisson;
@@ -84,6 +85,7 @@ public class SmagicalTgPlugin implements Plugin {
     }
     private void onMessageEvent(NewMessageHandler.MessageEvent event){
         TdApi.Message message = event.getData().getData();
+
         if (message.date < START_TIME) return;
         if (message.content.getConstructor() == TdApi.MessageText.CONSTRUCTOR){
             MessageInfo messageInfo = new MessageInfo();
@@ -321,8 +323,26 @@ public class SmagicalTgPlugin implements Plugin {
                     }
                 }
             }
-
+            Utils.withException(()->{
+                ClientUtils.setCommand(
+                        getBot().getClient(),
+                        chat.stream().collect(Collectors.toMap(
+                                CommandHandler.CommandInfo::getCmd, CommandHandler.CommandInfo::getDescription
+                        )),
+                        new TdApi.BotCommandScopeAllGroupChats()
+                );
+            });
+            Utils.withException(()->{
+                ClientUtils.setCommand(
+                        getBot().getClient(),
+                        user.stream().collect(Collectors.toMap(
+                                CommandHandler.CommandInfo::getCmd, CommandHandler.CommandInfo::getDescription
+                        )),
+                        new TdApi.BotCommandScopeAllPrivateChats()
+                );
+            });
         }
+
 
     }
 

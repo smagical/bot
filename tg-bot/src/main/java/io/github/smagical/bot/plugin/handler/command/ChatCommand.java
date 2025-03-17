@@ -13,6 +13,8 @@ import org.drinkless.tdlib.TdApi;
 import java.time.Duration;
 import java.util.*;
 
+import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatch;
+
 @Slf4j
 public class ChatCommand implements CommandHandler{
 

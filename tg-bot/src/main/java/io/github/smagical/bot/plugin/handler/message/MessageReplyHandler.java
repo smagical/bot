@@ -8,6 +8,7 @@ import io.github.smagical.bot.plugin.datasource.model.TgMessage;
 import io.github.smagical.bot.plugin.util.DbUtil;
 import io.github.smagical.bot.tg.Bot;
 import io.github.smagical.bot.tg.util.ClientUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.TdApi;
 
 import javax.sql.DataSource;
@@ -18,6 +19,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static io.github.smagical.bot.tg.util.Utils.withSQLAndNumCatchReturn;
+
+
+@Slf4j
 public  class MessageReplyHandler implements MessageContentHandler{
     public final static Integer MESSAGE_LENGTH = 30;
 
@@ -45,7 +50,7 @@ public  class MessageReplyHandler implements MessageContentHandler{
     }
 
     private void sendReply(MessageInfo messageInfo , boolean update){
-
+        log.info("{} {}",messageInfo,update);
         TgMessageHelper messageHelper = getQuery(plugin, messageInfo);
         if (messageHelper == null) {
             return;
@@ -168,7 +173,7 @@ public  class MessageReplyHandler implements MessageContentHandler{
 
      protected TgMessageHelper getQuery(SmagicalTgPlugin plugin, MessageInfo messageInfo){
 
-         return withSQLAndNumCatchFuture(()->{
+         return withSQLAndNumCatchReturn(()->{
              TgMessageHelper messageHelper = toTgMessageHelper(messageInfo);
              int segType = plugin.getConfiguration().getOrDefault("segType",SPLIT_FUNTION);
              if (segType > 1) segType = SPLIT_FUNTION;

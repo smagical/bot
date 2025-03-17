@@ -55,6 +55,7 @@ public class TgConfiguration {
                     }
                 }
         );
+        //onlyAdmin ONLYADMIN
         addUpdateListener("onlyAdmin",str->{
             if (str instanceof String) {
                 this.onlyAdmin = Boolean.parseBoolean(str.toString());
